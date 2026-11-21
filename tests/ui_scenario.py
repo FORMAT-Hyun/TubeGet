@@ -82,7 +82,7 @@ shot("u01_start")
 # --- 링크 붙여넣기: 클립보드에 주소가 없을 때 ------------------------------------
 QGuiApplication.clipboard().setText("그냥 글자")
 w._paste()
-check(w.panel.isVisible(), "주소가 없으면 입력 칸을 열어줌")
+check(not w.panel.isVisible(), "클립보드에 링크가 없어도 입력 칸이 갑자기 나타나지 않음")
 check(len(w.toasts._toasts) == 1, "클립보드에 링크가 없다는 알림")
 check(not w._ready and w.info is None, "정보 없이 입력 칸만 보임")
 w.toasts.clear()

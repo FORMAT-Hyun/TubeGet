@@ -569,14 +569,12 @@ class MainWindow(QMainWindow):
         text = (QGuiApplication.clipboard().text() or "").strip()
         first = text.splitlines()[0].strip() if text else ""
         if first and is_url(first):
-            self._open_panel()
             self.url_edit.setText(first)
             self._auto_pending = self.auto_toggle.isChecked()
             self.fetch()
         else:
-            self._open_panel(focus=True)
             self.toasts.show("warn", "클립보드에 링크가 없어요",
-                             "주소를 복사한 뒤 다시 누르거나, 아래 칸에 직접 붙여넣어 주세요.")
+                             "주소를 복사한 뒤 다시 눌러 주세요. (직접 입력하려면 Ctrl+L)")
 
     def _fetch_clicked(self) -> None:
         self._auto_pending = False       # 직접 입력해서 누른 건 먼저 보고 고르기
@@ -616,13 +614,12 @@ class MainWindow(QMainWindow):
         if not url:
             self._open_panel(focus=True)
             return
-        self._open_panel()
         if not is_url(url):
             if re.fullmatch(r"[\w-]{11}", url):   # 영상 ID 만 넣은 경우
                 url = f"https://www.youtube.com/watch?v={url}"
                 self.url_edit.setText(url)
             else:
-                self._set_info(None, error="올바른 주소가 아니에요. https:// 로 시작하는 주소를 넣어 주세요.")
+                self._report_error("올바른 주소가 아니에요. https:// 로 시작하는 주소를 넣어 주세요.")
                 return
         if not self.deps_ready:
             self.status_msg.setText("도구 확인이 끝나면 다시 눌러 주세요")
@@ -688,16 +685,22 @@ class MainWindow(QMainWindow):
         self._fetch_ui_idle()
         self._auto_pending = False
         self._last_fetch_log = log
-        self._panel_open = True
-        self._show_notice(message, error=True)
-        self.b_fetch_log.setVisible(bool(log.strip()))
-        self._update_panel_state()
+        self._report_error(message, log)
         self.status_msg.setText("불러오지 못했어요")
 
     def _can_download(self, info: MediaInfo) -> bool:
         if info.kind == "playlist":
             return any(e.available for e in info.entries)
         return not info.is_live
+
+    def _report_error(self, message: str, log: str = "") -> None:
+        """입력 칸이 열려 있으면 그 안에, 아니면 알림으로 알려준다 (갑자기 입력 칸이 튀어나오지 않게)."""
+        if self._panel_open:
+            self._show_notice(message, error=True)
+            self.b_fetch_log.setVisible(bool(log.strip()))
+            self._update_panel_state()
+        else:
+            self.toasts.show("error", "불러오지 못했어요", message[:160], timeout_ms=7000)
 
     def _show_notice(self, text: str, error: bool = False) -> None:
         self.v_notice.setObjectName("Error" if error else "Notice")
@@ -712,8 +715,9 @@ class MainWindow(QMainWindow):
         """(호환용) 정보를 카드로 올리거나, 오류 문구를 보여준다."""
         if info is None:
             if error:
-                self._panel_open = True
-            self._show_notice(error, error=bool(error))
+                self._report_error(error)
+            else:
+                self._show_notice("")
             return
         self._add_ready(info, self.info_url)
 
@@ -799,7 +803,6 @@ class MainWindow(QMainWindow):
         self._apply_filter()
 
     def _load_playlist_for(self, item: ReadyItem) -> None:
-        self._open_panel()
         self.url_edit.setText(item.url)
         self._auto_pending = False
         self.fetch(force_playlist=True)
@@ -925,7 +928,6 @@ class MainWindow(QMainWindow):
     def _redownload(self, url: str) -> None:
         if not url:
             return
-        self._open_panel()
         self.url_edit.setText(url)
         self._auto_pending = False
         self.fetch()
@@ -1170,7 +1172,6 @@ class MainWindow(QMainWindow):
         if not url and md.hasText():
             url = md.text().strip().splitlines()[0] if md.text().strip() else ""
         if is_url(url):
-            self._open_panel()
             self.url_edit.setText(url)
             self._auto_pending = self.auto_toggle.isChecked()
             self.fetch()

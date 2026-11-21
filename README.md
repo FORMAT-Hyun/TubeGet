@@ -44,7 +44,7 @@ macOS나 Linux에서는 `./run.sh`로 실행합니다. macOS는 ffmpeg를 `brew 
 
 ### 설치 파일 만들기 (추천)
 
-**`build_installer.bat`을 더블클릭**하면 `dist\TubeGet-Setup-0.0.8.exe` 설치 파일이 만들어집니다.
+**`build_installer.bat`을 더블클릭**하면 `dist\TubeGet-Setup-0.1.0.exe` 설치 파일이 만들어집니다.
 처음 실행하면 PyInstaller와 Inno Setup(winget으로 자동 설치)을 준비하느라 몇 분 걸려요.
 
 설치 파일을 실행하면 일반 프로그램처럼 설치 마법사가 열립니다.
