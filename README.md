@@ -1,134 +1,127 @@
-# TubeGet: yt-dlp 기반 유튜브 다운로더 (GUI)
+# TubeGet
 
-주소를 붙여넣고 화질과 형식을 고르면 받아주는 데스크톱 프로그램입니다.
-다운로드는 [yt-dlp](https://github.com/yt-dlp/yt-dlp)가 하고, TubeGet은 그걸 편하게 쓰게 해 주는 화면이에요.
+**English** | [한국어](README.ko.md)
 
-## 주요 기능
+**A desktop YouTube downloader (GUI) powered by yt-dlp**
 
-- **영상 받기**: 최고 화질부터 4K/1440p/1080p/720p까지 선택 가능, 화질마다 예상 크기 표시, MP4/MKV/WebM 지원
-- **음원만 받기**: MP3, M4A, Opus, FLAC, WAV, 원본 그대로
-- **음원 태그 (영상마다 켜기/끄기)**: [태그] 버튼으로 제목·아티스트·앨범·연도·앨범 커버를 넣을지, 어떤 값으로 넣을지 정하기
-  - "AJR - Way Less Sad (Official Video)" 같은 제목을 아티스트 AJR, 제목 Way Less Sad로 자동 정리해서 미리 채워줌 (직접 고칠 수 있음)
-  - 끄면 태그와 커버가 전혀 없는 깨끗한 파일로 저장
-  - 재생목록은 영상마다 자동으로 정리
-- **재생목록**: 목록에서 체크하거나 범위(`1-10, 15, 20-`)로 고르기. 폴더 만들기와 번호 붙이기는 선택
-- **영상별 자막 선택**: 그 영상에 실제로 있는 자막(올린 자막 / 자동 생성·번역 자막) 중에서 고르기. 저장 방식은 영상에 넣기, `.srt` 파일로 따로 저장, 둘 다 중에서 선택
-- **썸네일과 메타데이터**를 파일에 넣기
-- **다국어 (한국어 / English)**: [설정 → 언어 / Language]에서 고르거나 '자동'(시스템 언어)으로 둘 수 있어요. 바꾸면 프로그램을 다시 켠 뒤 적용돼요. 새 언어는 `tubegetapp/locales/`에 번역 파일을 추가하면 돼요 (아래 "번역 추가하기")
-- **앱 정보**: 오른쪽 아래 `TubeGet 0.1.3` 버튼(또는 F1) — 버전, yt-dlp·ffmpeg 버전, 데이터 폴더, 문제 신고용 `정보 복사`
-- **태그**: 음원(MP3·M4A)뿐 아니라 영상(MP4·MKV)도 제목·아티스트·앨범·연도·표지를 영상마다 정하거나 끌 수 있어요 (건드리지 않으면 유튜브 정보 그대로)
-- **자막 / 더빙**: 영상마다 자막 언어와 더빙(다른 언어 음성 트랙, 유튜브 자동 더빙 등)을 골라요. 그 언어 음성이 없으면 원본 음성으로 받아요
-- **편집 호환 (H.264)**: 편집 프로그램이나 오래된 기기에서 잘 열리는 코덱을 우선
-- **다운로드 큐**: 동시에 여러 개 받기, 취소와 이어받기, 실패 원인 한국어 안내, 로그 보기
-  - 영상과 음성을 따로 받아도 진행률 막대는 전체 기준 하나로 표시
-  - 껐다 켜도 대기 중인 목록을 다시 불러와서 이어서 받음
-  - 이미 받은 파일은 '건너뜀'으로 표시하고 [덮어쓰기] 버튼 제공
-  - 목록에서 지우면 받다 만 파일(.part 등)도 함께 정리
-  - 같은 파일을 만드는 작업은 동시에 실행하지 않음
-- **기록**: 받은 파일 열기, 폴더 열기, 다시 받기
-- **도구 자동 설치**: 처음 실행할 때 yt-dlp, ffmpeg, Deno를 버튼 하나로 설치. yt-dlp 자동 업데이트는 하루에 한 번만 확인
-- **어두운 화면(빨강 포인트)**: 위쪽 툴바에서 영상/오디오·화질·포맷·저장 위치를 바로 고르고, 목록은 [전체 · 동영상 · 오디오 · 기록] 탭으로 나눠 봐요. 다 받으면 오른쪽 아래에 알림이 떠요
-- **바로 받기**: 툴바의 스위치를 켜면 [링크 붙여넣기]를 누르자마자 지금 설정으로 바로 받아요 (재생목록은 고르는 창이 떠요)
-- **하나만 실행**: 이미 켜져 있으면 새로 켜지 않고 기존 창을 앞으로 가져옴
-- 창에 주소 끌어다 놓기, 다 받으면 알림, 클립보드 주소 자동 불러오기(기본 꺼짐, 설정에서 켤 수 있음)
+Paste a link, pick the quality and format, and TubeGet downloads it.
+The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); TubeGet is the friendly window on top of it.
 
-## 실행하기 (Windows)
+## Features
 
-> **새 버전을 받으면 예전 폴더에 덮어쓰지 말고 새 폴더에 풀어주세요.** 압축 파일을 마우스 오른쪽 → **'모두 압축 풀기'**를 쓰면 돼요.
-> 설정, 기록, 설치된 도구는 `%APPDATA%\TubeGet`에 따로 있어서 예전 폴더를 지워도 그대로 남아요.
+- **Video**: Best quality down to 4K, 1440p, 1080p or 720p, with an estimated file size for each. MP4, MKV and WebM.
+- **Audio only**: MP3, M4A, Opus, FLAC, WAV, or the original stream as is
+- **Playlists**: Tick items in the list or select a range (`1-10, 15, 20-`). Creating a folder and numbering files are optional.
+- **Subtitles / dubbing**: Choose from the subtitles each video actually has (uploaded, auto-generated or auto-translated) and from its dubbed audio tracks (other-language audio, YouTube auto-dubbing, etc.).
+  - Save subtitles embedded in the video, as a separate `.srt` file, or both.
+  - Videos without audio in the chosen language fall back to the original audio.
+- **Tags**: Set or turn off title, artist, album, year and cover for audio (MP3, M4A) and video (MP4, MKV), per video.
+  - Titles like "AJR - Way Less Sad (Official Video)" are pre-filled as artist `AJR` and title `Way Less Sad`. You can edit them.
+  - Turn tags off to save a clean file with no tags or cover.
+  - Playlists are cleaned up automatically for each video.
+- **Editing-friendly (H.264)**: Prefers a codec that opens well in video editors and older devices.
+- **Download queue**: Several downloads at once, cancel and resume, a clear reason when something fails, and a log viewer.
+  - One progress bar per item, even when video and audio are downloaded separately.
+  - Waiting downloads are restored and resumed after a restart.
+  - Files that already exist are marked "skipped", with an [Overwrite] button.
+  - Removing an item from the list also cleans up its partial files (`.part`, etc.).
+- **Instant download**: With the toolbar switch on, clicking [Paste link] starts downloading right away with the current settings. Playlists open a selection window.
+- **History**: Open downloaded files or their folder, or download again
+- **Automatic tool setup**: On first run, install yt-dlp, ffmpeg and Deno with one click. yt-dlp updates are checked once a day.
+- **Languages**: English and Korean. Choose under [Settings → Language], or leave it on "Auto" to follow the system language. Takes effect after a restart.
+- **Also**: Dark theme, drag and drop links onto the window, a notification when downloads finish, single-instance app, and an About window (F1) with "Copy info" for bug reports
 
-1. [Python 3.10 이상](https://www.python.org/downloads/)을 설치합니다. 설치 화면에서 **"Add python.exe to PATH"를 꼭 체크**하세요.
-2. 이 폴더의 **`run_windows.bat`을 더블클릭**합니다.
-   처음 한 번은 필요한 패키지(PySide6)를 설치하느라 1~2분 걸려요.
-3. 처음 켜면 **[도구 상태]** 창이 뜹니다. **[없는 도구 설치]**를 누르면 yt-dlp, ffmpeg, Deno를 자동으로 받아요 (약 200MB, 한 번만 받으면 됨).
+## Running (Windows)
 
-macOS나 Linux에서는 `./run.sh`로 실행합니다. macOS는 ffmpeg를 `brew install ffmpeg`로 따로 설치해야 해요.
+1. Install [Python 3.10 or later](https://www.python.org/downloads/). In the installer, **check "Add python.exe to PATH"**.
+2. **Double-click `run_windows.bat`**. The first run takes a minute or two to install the required package (PySide6).
+3. The **[Tool status]** window opens on first launch. Click **[Install missing tools]** to download yt-dlp, ffmpeg and Deno automatically (about 200 MB, only once).
 
-### 설치 파일 만들기 (추천)
+On macOS and Linux, run `./run.sh`. On macOS, install ffmpeg separately with `brew install ffmpeg`.
 
-**`build_installer.bat`을 더블클릭**하면 `dist\TubeGet-Setup-0.1.3.exe` 설치 파일이 만들어집니다.
-처음 실행하면 PyInstaller와 Inno Setup(winget으로 자동 설치)을 준비하느라 몇 분 걸려요.
+> When you get a new version, extract it into a new folder instead of over the old one. Settings, history and installed tools live separately in `%APPDATA%\TubeGet`, so they are kept.
 
-설치 파일을 실행하면 일반 프로그램처럼 설치 마법사가 열립니다.
+### Building an installer (recommended)
 
-- 설치 위치는 기본으로 `C:\Program Files\TubeGet`이에요. '나만 설치'를 고르면 관리자 권한 없이 `%LOCALAPPDATA%\Programs\TubeGet`에 설치돼요.
-- **시작 메뉴에 TubeGet 바로가기**가 항상 만들어져요.
-- 선택 항목: 바탕 화면 바로가기, Windows를 켤 때 자동 실행
-- 설정 → 앱 → 설치된 앱에서 제거할 수 있어요. 제거할 때 설정과 도구 폴더도 지울지 물어봐요.
+**Double-click `build_installer.bat`** to create `dist\TubeGet-Setup-<version>.exe`.
+The first run takes a few minutes to set up PyInstaller and Inno Setup (installed automatically with winget).
 
-설치 파일 하나만 있으면 파이썬이 없는 다른 PC에도 설치할 수 있어요.
+- The default install location is `C:\Program Files\TubeGet`. Choose "Install for me only" to install to `%LOCALAPPDATA%\Programs\TubeGet` without admin rights.
+- A Start menu shortcut is always created. A desktop shortcut and starting with Windows are optional.
+- Uninstall from [Settings → Apps → Installed apps]. The uninstaller asks whether to remove settings and tools too.
 
-### exe만 만들기
+The installer works on PCs without Python.
 
-`build_windows.bat`을 실행하면 설치 없이 바로 쓰는 `dist\TubeGet\TubeGet.exe`가 만들어집니다 (`dist\TubeGet` 폴더 전체가 필요해요).
+### Building just the exe
 
-## 사용법
+Run `build_windows.bat` to create a portable `dist\TubeGet\TubeGet.exe` (the whole `dist\TubeGet` folder is needed).
 
-1. 유튜브 주소를 복사하고 위쪽 초록색 **링크 붙여넣기** 버튼을 누릅니다. (주소를 직접 입력하려면 Ctrl+L, 창에 끌어다 놓아도 돼요)
-2. 위쪽 툴바에서 다운로드 종류(영상/오디오), 화질, 포맷, 저장 위치를 고릅니다. 자막·태그(음원)도 같은 줄 칩에서 켜고 끄며, 썸네일은 항상 파일에 넣어요.
-3. 링크를 불러오면 목록 맨 위에 영상 카드(썸네일·정보·예상 크기)가 생기고, 카드의 **다운로드**를 누르면 받기 시작해요. 링크를 여러 개 불러 두고 카드마다 자막/더빙·태그를 따로 정할 수도 있어요(카드를 클릭해 선택). ([바로 받기]를 켜 두었다면 2~3번 없이 바로 시작해요)
+## Usage
 
-| 상황 | 해결 방법 |
+1. Copy a YouTube link and click the red **[Paste link]** button at the top. Press Ctrl+L to type a link, or drag one onto the window.
+2. In the toolbar, choose the download type (video/audio), quality, format, save location, subtitles/dubbing and tags.
+3. A video card (thumbnail, info, estimated size) appears at the top of the list. Click **[Download]** on the card. You can load several links and set options per card.
+
+With [Instant] on, steps 2 and 3 are skipped.
+
+### Troubleshooting
+
+| Problem | Solution |
 |---|---|
-| "봇 확인", "연령 제한", "멤버십 전용" 오류 | 설정의 **브라우저 쿠키**에서 유튜브에 로그인된 브라우저를 고르세요 (Firefox가 가장 잘 됨) |
-| 403 오류, 갑자기 안 받아짐 | 유튜브가 바뀐 경우가 많아요. **[도구 상태] → [yt-dlp 업데이트]** |
-| 화질이 360p밖에 안 나옴 | Deno가 없을 때 생기는 경우가 많아요. [도구 상태]에서 설치 |
-| 편집 프로그램에서 영상이 안 열림 | 설정에서 **편집 호환 (H.264)**를 켜고 다시 받기 |
-| 취소한 다운로드 이어받기 | 목록에서 **[다시]** 누르기 (받던 부분부터 이어받아요) |
-| 화질 목록이나 크기가 이상함 | [도구 상태] → **[진단 정보 폴더]**의 `last_info.json`, `last_error.txt`를 확인하세요 (마지막으로 불러온 영상의 원본 정보와 오류) |
+| "Bot check", "age-restricted" or "members-only" errors | Under [Settings → Browser cookies], choose a browser that is logged in to YouTube (Firefox works best) |
+| 403 errors, downloads suddenly stop working | YouTube has often changed. [Tool status] → [Update yt-dlp] |
+| Only up to 360p is available | Often happens when Deno is missing. Install it from [Tool status] |
+| The video won't open in an editor | Turn on **Prefer editing-friendly (H.264)** in Settings and download again |
+| Resume a canceled download | Click **[Retry]** in the list; it resumes where it stopped |
+| Quality list or sizes look wrong | Check `last_info.json` and `last_error.txt` in [Tool status] → [Diagnostics folder] |
 
-## 파일 위치
+## File locations
 
-| 무엇 | Windows | macOS | Linux |
+| What | Windows | macOS | Linux |
 |---|---|---|---|
-| 설정, 기록, 설치된 도구(`bin`) | `%APPDATA%\TubeGet` | `~/Library/Application Support/TubeGet` | `~/.config/tubeget` |
-| 기본 저장 위치 | `다운로드\TubeGet` | 같음 | 같음 |
+| Settings, history, installed tools (`bin`) | `%APPDATA%\TubeGet` | `~/Library/Application Support/TubeGet` | `~/.config/tubeget` |
+| Default save location | `Downloads\TubeGet` | same | same |
 
-## 구조
+## Project structure
 
 ```
-main.py                    진입점
-installer/TubeGet.iss      설치 마법사 스크립트 (Inno Setup)
-build_installer.bat        exe 빌드부터 설치 파일 생성까지 한 번에
+main.py                    Entry point
+installer/TubeGet.iss      Installer script (Inno Setup)
+build_installer.bat        Builds the exe and the installer in one go
 tubegetapp/
-  config.py                설정 (JSON)
-  paths.py / utils.py      경로, 포맷팅, 파일명 정리
+  config.py                Settings (JSON)
+  i18n.py                  Translation: tr("Korean source") → current language
+  locales/en.py            English translations
+  paths.py / utils.py      Paths, formatting, file name cleanup
   core/
-    deps.py                yt-dlp/ffmpeg/JS 런타임 찾기, 버전 확인, 다운로드 주소
-    installer.py           도구 자동 설치, yt-dlp -U 업데이트 (백그라운드)
-    options.py             다운로드 옵션 → yt-dlp 명령줄 인자
-    progress.py            yt-dlp 출력 파싱 (--progress-template / --print 사용)
-    runner.py              다운로드 1개 = yt-dlp 프로세스 1개 (QProcess, 취소 시 자식까지 종료)
-    fetcher.py             영상·재생목록 정보 조회 (yt-dlp -J --flat-playlist)
-    metadata.py            JSON 해석 (화질 목록, 예상 크기, 재생목록 항목)
-    queue.py               동시 실행 제한 큐
-    errors.py              오류 → 한국어 안내
-    tags.py                음원 태그 추측(아티스트 - 곡명 나누기, 꼬리표 지우기)과 yt-dlp 인자
-    history.py             기록 저장
-  ui/                      PySide6 화면 (메인 창, 목록 행, 알림, 아이콘, 테마, 재생목록, 설정, 도구 상태, 기록)
+    deps.py                Finds yt-dlp / ffmpeg / JS runtime, checks versions
+    installer.py           Automatic tool install, yt-dlp -U updates (background)
+    options.py             Download options → yt-dlp command-line arguments
+    progress.py            Parses yt-dlp output
+    runner.py              One download = one yt-dlp process (QProcess)
+    fetcher.py             Video / playlist info (yt-dlp -J --flat-playlist)
+    metadata.py            Parses the JSON (qualities, estimated sizes, playlist items)
+    queue.py               Queue with a concurrency limit
+    errors.py              yt-dlp errors → readable messages
+    tags.py                Tag guessing (splitting "Artist - Song", removing labels)
+    history.py             Download history
+  ui/                      PySide6 user interface
 tests/
-  test_core.py             단위 테스트 (pytest)
-  integration_local.py     로컬 서버로 실제 yt-dlp 다운로드 흐름 테스트
-  gui_smoke.py             화면을 띄워 처음부터 끝까지 흐름 테스트
-  fake_youtube.py          유튜브 응답을 흉내 내는 yt-dlp 대역 (테스트용)
-  gui_scenario.py          자막·건너뜀·덮어쓰기·임시 파일 정리·목록 복원·단일 실행 시나리오 테스트 (28개 항목)
-  tag_scenario.py          음원 태그 편집·끄기·재생목록 자동 정리 후 실제 파일 태그 확인
-  ui_scenario.py           새 화면(링크 붙여넣기·영상 카드·바로 받기·필터 탭·완료 알림) 동작 확인
+  test_core.py             Unit tests (pytest)
+  test_i18n.py             Checks for missing translations and placeholder mismatches
+  integration_local.py     Real yt-dlp download flow against a local server
+  fake_youtube.py          A yt-dlp stand-in that mimics YouTube responses
+  gui_smoke.py, gui_scenario.py, tag_scenario.py, ui_scenario.py   UI flow tests
 ```
 
-yt-dlp를 라이브러리로 넣지 않고 **별도 실행 파일로 호출**하는 이유: 유튜브가 자주 바뀌기 때문에, 프로그램을 다시 빌드하지 않고 `yt-dlp -U`만으로 바로 대응할 수 있어요.
+yt-dlp is **called as a separate executable** rather than bundled as a library. YouTube changes often, and this way `yt-dlp -U` is enough to keep up without rebuilding the app.
 
-## 주의
+## Adding a translation
 
-본인이 올린 영상, 허락받은 영상, 개인 소장 범위 안에서만 사용하세요. 유튜브 약관상 무단 다운로드나 재배포는 문제가 될 수 있습니다.
+UI text is wrapped in `tr("Korean text")`, using the Korean source as the key (`tubegetapp/i18n.py`).
 
-## 번역 추가하기
+1. Copy `tubegetapp/locales/en.py` to a new file such as `ja.py` and translate the values (right-hand side) of `STRINGS`. Keep placeholders like `{name}` as they are.
+2. Add `"ja": "日本語"` to `LANGUAGES` in `tubegetapp/i18n.py`, and load the new file in `_load()`.
+3. Run `python -m pytest tests/test_i18n.py` to check for missing translations and placeholder errors.
 
-화면 글은 한국어 원문을 키로 쓰는 `tr("한국어 문장")`으로 감싸져 있어요 (`tubegetapp/i18n.py`).
-
-1. `tubegetapp/locales/en.py`를 복사해 `ja.py` 같은 파일을 만들고, `STRINGS`의 값(오른쪽)을 번역합니다. `{name}` 같은 자리표시자는 그대로 두세요.
-2. `tubegetapp/i18n.py`의 `LANGUAGES`에 `"ja": "日本語"`를 넣고, `_load()`에서 새 파일을 불러오게 합니다.
-3. `python -m pytest tests/test_i18n.py`로 빠진 번역과 자리표시자 오류를 확인합니다.
-
-번역이 없는 문장은 한국어 원문이 그대로 나와요. 개발할 때는 환경 변수 `TUBEGET_LANG=en`으로 언어를 강제로 정할 수 있어요.
-
+Text without a translation falls back to the Korean source. During development you can force a language with the environment variable `TUBEGET_LANG=en`.
