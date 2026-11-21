@@ -64,6 +64,8 @@ QLabel#SectionLabel {{ color: {MUTED}; font-size: 9pt; }}
 /* ---------- 목록 ---------- */
 QFrame#QueueItem {{ background: {SURFACE}; border: 1px solid {BORDER}; border-radius: 10px; }}
 QFrame#QueueItem:hover {{ background: {ROW_HOVER}; border-color: {BORDER_STRONG}; }}
+QFrame#ReadyItem {{ background: {SURFACE}; border: 1px solid {BORDER_STRONG}; border-radius: 12px; }}
+QFrame#ReadyItem[selected="true"] {{ border-color: {ACCENT}; }}
 QFrame#QueueItem[fresh="true"] {{ background: {FRESH_BG}; border-color: {FRESH_BORDER}; }}
 QFrame#Card {{ background: {SURFACE}; border: 1px solid {BORDER}; border-radius: 12px; }}
 QLabel#AppTitle {{ font-size: 15pt; font-weight: 700; }}

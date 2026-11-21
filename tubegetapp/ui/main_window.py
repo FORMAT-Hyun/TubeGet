@@ -31,6 +31,7 @@ from .deps_dialog import DepsDialog
 from .history_view import HistoryView
 from .playlist_dialog import PlaylistDialog
 from .queue_item import QueueItemWidget
+from .ready_item import ReadyItem
 from .settings_dialog import SettingsDialog
 from .subtitle_dialog import LANG_NAMES, SubtitleDialog, default_selection, dub_name, summarize
 from .tag_dialog import TagDialog, TagState
@@ -54,6 +55,8 @@ class MainWindow(QMainWindow):
         self.deps_ready = False
         self.info: Optional[MediaInfo] = None
         self.info_url = ""
+        self._ready: list[ReadyItem] = []     # 목록에 올라온 '받을 영상' 카드
+        self._sel: Optional[ReadyItem] = None
         self._last_clip = ""
         self._channel_retry = False
         self._updater: Optional[YtdlpUpdater] = None
@@ -213,8 +216,8 @@ class MainWindow(QMainWindow):
         self.panel = QFrame()
         self.panel.setObjectName("InfoPanel")
         pl = QVBoxLayout(self.panel)
-        pl.setContentsMargins(18, 16, 18, 16)
-        pl.setSpacing(14)
+        pl.setContentsMargins(14, 12, 14, 12)
+        pl.setSpacing(10)
 
         url_row = QHBoxLayout()
         url_row.setSpacing(8)
@@ -247,49 +250,6 @@ class MainWindow(QMainWindow):
         self.notice_box.setLayout(notice_row)
         pl.addWidget(self.notice_box)
 
-        # 영상 정보: 썸네일(길이 표시) + 제목 + 알약 모양 정보
-        self.info_box = QWidget()
-        info_row = QHBoxLayout(self.info_box)
-        info_row.setContentsMargins(0, 0, 0, 0)
-        info_row.setSpacing(18)
-        self.thumb = QLabel()
-        self.thumb.setObjectName("Thumb")
-        self.thumb.setFixedSize(THUMB_SIZE)
-        self.thumb.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        info_row.addWidget(self.thumb, 0, Qt.AlignmentFlag.AlignTop)
-        meta_col = QVBoxLayout()
-        meta_col.setSpacing(9)
-        self.v_title = QLabel()
-        self.v_title.setObjectName("VideoTitle")
-        self.v_title.setWordWrap(True)
-        self.v_title.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        self.v_title.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        self.meta_row = QHBoxLayout()
-        self.meta_row.setSpacing(6)
-        self.b_load_playlist = make_button("이 주소의 재생목록 전체 불러오기 →", link=True)
-        self.b_load_playlist.clicked.connect(lambda: self.fetch(force_playlist=True))
-        meta_col.addWidget(self.v_title)
-        meta_col.addLayout(self.meta_row)
-        meta_col.addWidget(self.b_load_playlist, 0, Qt.AlignmentFlag.AlignLeft)
-        meta_col.addStretch(1)
-        info_row.addLayout(meta_col, 1)
-        pl.addWidget(self.info_box)
-
-        # 아래: 예상 크기 + 다운로드 버튼
-        self.action_box = QWidget()
-        action = QHBoxLayout(self.action_box)
-        action.setContentsMargins(0, 0, 0, 0)
-        self.est_label = QLabel()
-        self.est_label.setObjectName("Muted")
-        self.b_download = make_button("다운로드", primary=True)
-        self.b_download.setIcon(icons.icon("download", "#ffffff", 18))
-        self.b_download.setIconSize(QSize(18, 18))
-        self.b_download.setMinimumWidth(190)
-        self.b_download.setMinimumHeight(42)
-        self.b_download.clicked.connect(self.add_download)
-        action.addWidget(self.est_label, 1)
-        action.addWidget(self.b_download)
-        pl.addWidget(self.action_box)
         bd.addWidget(self.panel)
         self.panel.setVisible(False)
 
@@ -481,21 +441,13 @@ class MainWindow(QMainWindow):
             s.container = self.fmt.currentData() or "mp4"
             s.max_height = int(self.quality.currentData() or 0)
         s.save()
+        self._update_estimate()
 
     def _update_estimate(self) -> None:
-        info = self.info
-        if not info:
-            self.est_label.setText("")
-            return
-        if info.kind == "playlist":
-            n = sum(1 for e in info.entries if e.available)
-            self.est_label.setText(f"받을 수 있는 영상 {n}개")
-            return
-        if self.mode.value() == "audio":
-            size = info.estimated_size(0, "audio")
-        else:
-            size = info.estimated_size(int(self.quality.currentData() or 0))
-        self.est_label.setText((f"예상 크기 ≈ {human_size(size)}" if size else ""))
+        mode = self.mode.value()
+        height = int(self.quality.currentData() or 0)
+        for r in self._ready:
+            r.update_estimate(mode, height)
 
     # ==================================================================
     # 도구 확인 / 업데이트
@@ -651,27 +603,12 @@ class MainWindow(QMainWindow):
         self._auto_pending = False
         self._panel_open = False
         self.url_edit.clear()
-        self._set_info(None)
+        self._show_notice("")
         self._update_panel_state()
 
-    def _set_meta(self, bits: list) -> None:
-        """제목 아래의 알약 모양 정보 (채널 · 최대 화질 …)."""
-        while self.meta_row.count():
-            item = self.meta_row.takeAt(0)
-            if item.widget() is not None:
-                item.widget().deleteLater()
-        for text, accent in bits:
-            lbl = QLabel(text)
-            lbl.setObjectName("PillAccent" if accent else "Pill")
-            self.meta_row.addWidget(lbl)
-        self.meta_row.addStretch(1)
-
     def _update_panel_state(self) -> None:
-        has_info = self.info is not None
         has_notice = bool(self.v_notice.text()) and not self.v_notice.isHidden()
         self.panel.setVisible(self._panel_open)
-        self.info_box.setVisible(has_info)
-        self.action_box.setVisible(has_info)
         self.notice_box.setVisible(has_notice or self.b_fetch_log.isVisibleTo(self.notice_box))
 
     def fetch(self, force_playlist: bool = False) -> None:
@@ -701,7 +638,6 @@ class MainWindow(QMainWindow):
         self.b_fetch.setEnabled(False)
         self.b_fetch.setText("불러오는 중…")
         self.fetch_bar.setVisible(True)
-        self.b_download.setEnabled(False)
         self.status_msg.setText("영상 정보를 불러오는 중… (Esc로 취소)")
         self.fetcher.fetch(url, self.deps, playlist=playlist, cookies_browser=self.settings.cookies_browser)
 
@@ -717,7 +653,6 @@ class MainWindow(QMainWindow):
         self.b_fetch.setEnabled(True)
         self.b_fetch.setText("불러오기")
         self.fetch_bar.setVisible(False)
-        self.b_download.setEnabled(self.info is not None and self._can_download(self.info))
 
     def _on_info(self, info: MediaInfo, url: str) -> None:
         # 채널 주소면 '동영상' 탭으로 한 번 더
@@ -728,24 +663,35 @@ class MainWindow(QMainWindow):
             self.fetch(force_playlist=True)
             return
         self._fetch_ui_idle()
-        self.info_url = url
-        self._set_info(info)
-        self.status_msg.setText("불러왔어요")
-        if self._auto_pending:          # '바로 받기': 보여주지 않고 바로 목록에 넣기
+        if info.kind == "playlist" and info.nested_tabs:
+            self._show_notice("채널 주소예요. 채널의 '동영상' 탭 주소(…/videos)나 재생목록 주소를 넣어 주세요.")
+            self.status_msg.setText("불러왔어요")
+            return
+        item = self._add_ready(info, url)
+        self.status_msg.setText("불러왔어요 - 목록의 [다운로드]를 눌러 받으세요")
+        if self._auto_pending:          # '바로 받기': 카드를 거치지 않고 바로 받기
             self._auto_pending = False
-            if info.kind == "video" and self._can_download(info):
+            if item.can_download() and info.kind == "video":
                 before = len(self.queue.jobs)
-                self.add_download()
+                self._download_ready(item)
                 if len(self.queue.jobs) > before:
                     self._close_panel()
                     self.toasts.show("ok", "다운로드 목록에 추가했어요", info.title, timeout_ms=3500)
+                    return
+        # 주소 입력 칸은 닫고, 카드는 목록 맨 위에 보여준다
+        self._panel_open = False
+        self.url_edit.clear()
+        self._update_panel_state()
+        self.q_scroll.verticalScrollBar().setValue(0)
 
     def _on_info_failed(self, message: str, url: str, log: str = "") -> None:
         self._fetch_ui_idle()
         self._auto_pending = False
         self._last_fetch_log = log
-        self._set_info(None, error=message)
+        self._panel_open = True
+        self._show_notice(message, error=True)
         self.b_fetch_log.setVisible(bool(log.strip()))
+        self._update_panel_state()
         self.status_msg.setText("불러오지 못했어요")
 
     def _can_download(self, info: MediaInfo) -> bool:
@@ -753,90 +699,110 @@ class MainWindow(QMainWindow):
             return any(e.available for e in info.entries)
         return not info.is_live
 
+    def _show_notice(self, text: str, error: bool = False) -> None:
+        self.v_notice.setObjectName("Error" if error else "Notice")
+        repolish(self.v_notice)
+        self.v_notice.setText(text)
+        self.v_notice.setVisible(bool(text))
+        if not text:
+            self.b_fetch_log.setVisible(False)
+        self._update_panel_state()
+
     def _set_info(self, info: Optional[MediaInfo], error: str = "") -> None:
-        self.info = info
-        if info is not None or error:
-            self._panel_open = True
-        self.thumb.clear()
-        self.thumb.setText("미리보기")
-        self.v_notice.setVisible(False)
-        self.b_load_playlist.setVisible(False)
-        self.b_fetch_log.setVisible(False)
-        if info is not None:
-            self.sub_langs, self.sub_auto = default_selection(
-                info, self.settings.sub_default_langs, self.settings.sub_default_auto)
-            if info.kind == "playlist" and self.settings.sub_default_langs:
-                self.sub_langs = [c.strip() for c in self.settings.sub_default_langs.split(",") if c.strip()]
-                self.sub_auto = self.settings.sub_default_auto
-            self.dub_lang = self.settings.dub_default if info.kind == "playlist" else ""
+        """(호환용) 정보를 카드로 올리거나, 오류 문구를 보여준다."""
+        if info is None:
+            if error:
+                self._panel_open = True
+            self._show_notice(error, error=bool(error))
+            return
+        self._add_ready(info, self.info_url)
+
+    # ---- '받을 영상' 카드 --------------------------------------------------
+    def _fresh_state(self, item: ReadyItem) -> None:
+        info, s = item.info, self.settings
+        item.sub_langs, item.sub_auto = default_selection(info, s.sub_default_langs, s.sub_default_auto)
+        if info.kind == "playlist" and s.sub_default_langs:
+            item.sub_langs = [c.strip() for c in s.sub_default_langs.split(",") if c.strip()]
+            item.sub_auto = s.sub_default_auto
+        item.dub_lang = s.dub_default if info.kind == "playlist" else ""
+        item.tag_state = TagState.for_info(info, s.audio_tags_default, s.embed_thumbnail, s.audio_tag_clean)
+        item.vtag_state = TagState(s.embed_metadata, s.embed_thumbnail, None, False)
+
+    def _add_ready(self, info: MediaInfo, url: str) -> ReadyItem:
+        item = next((r for r in self._ready if r.info is info), None)
+        if item is not None:                      # 같은 정보를 다시 올리면 설정만 처음으로
+            self._fresh_state(item)
+            self._select_ready(item, store=False)
+            return item
+        item = ReadyItem(info, url, self.thumbs)
+        item.downloadRequested.connect(self._download_ready)
+        item.removeRequested.connect(self._remove_ready)
+        item.selectRequested.connect(self._select_ready)
+        item.loadPlaylistRequested.connect(self._load_playlist_for)
+        self._fresh_state(item)
+        self._ready.insert(0, item)
+        if self._filter == "history":
+            self._set_filter("all")
+        self.q_layout.insertWidget(0, item)
+        self._select_ready(item)
+        self._apply_filter()
+        return item
+
+    def _store_ready_state(self) -> None:
+        r = self._sel
+        if r is not None:
+            r.sub_langs, r.sub_auto, r.dub_lang = list(self.sub_langs), self.sub_auto, self.dub_lang
+            r.tag_state, r.vtag_state = self.tag_state, self.vtag_state
+
+    def _select_ready(self, item: Optional[ReadyItem], store: bool = True) -> None:
+        if store:
+            self._store_ready_state()
+        self._sel = item
+        for r in self._ready:
+            r.set_selected(r is item and len(self._ready) > 1)
+        if item is not None:
+            self.info, self.info_url = item.info, item.url
+            self.sub_langs, self.sub_auto, self.dub_lang = list(item.sub_langs), item.sub_auto, item.dub_lang
+            self.tag_state, self.vtag_state = item.tag_state, item.vtag_state
         else:
-            self.sub_langs, self.sub_auto = [], False
-            self.dub_lang = ""
-        self.tag_state = TagState.for_info(info, self.settings.audio_tags_default,
-                                           self.settings.embed_thumbnail, self.settings.audio_tag_clean)
-        self.vtag_state = TagState(self.settings.embed_metadata, self.settings.embed_thumbnail, None, False)
+            self.info, self.info_url = None, ""
+            self.sub_langs, self.sub_auto, self.dub_lang = [], False, ""
+            self.tag_state = TagState.for_info(None, self.settings.audio_tags_default,
+                                               self.settings.embed_thumbnail, self.settings.audio_tag_clean)
+            self.vtag_state = TagState(self.settings.embed_metadata, self.settings.embed_thumbnail, None, False)
         self._update_tags_button()
         self._update_subs_button()
-        if info is None:
-            self.v_title.setText("")
-            self._set_meta([])
-            if error:
-                self.v_notice.setText(error)
-                self.v_notice.setObjectName("Error")
-                repolish(self.v_notice)
-                self.v_notice.setVisible(True)
-            self.b_download.setEnabled(False)
-            self.b_download.setText("다운로드")
-            self._fill_quality_combo()
-            self._update_estimate()
-            self._update_panel_state()
-            return
-
-        self.v_title.setText(info.title)
-        self.v_notice.setObjectName("Notice")
-        repolish(self.v_notice)
-        if info.kind == "playlist":
-            n_ok = sum(1 for e in info.entries if e.available)
-            bits = ["재생목록", f"영상 {len(info.entries)}개"]
-            if info.uploader:
-                bits.insert(1, info.uploader)
-            self._set_meta([(b, False) for b in bits])
-            if info.nested_tabs:
-                self.v_notice.setText("채널 주소예요. 채널의 '동영상' 탭 주소(…/videos)나 재생목록 주소를 넣어 주세요.")
-                self.v_notice.setVisible(True)
-            elif n_ok < len(info.entries):
-                self.v_notice.setText(f"비공개·삭제된 영상 {len(info.entries) - n_ok}개는 건너뛰어요.")
-                self.v_notice.setVisible(True)
-            self.b_download.setText(f"재생목록에서 선택… ({n_ok})")
-        else:
-            bits = [(info.uploader, False)] if info.uploader else []
-            if info.heights:
-                bits.append((f"최대 {height_label(info.heights[0])}", True))
-            if info.subtitles:
-                bits.append((f"자막 {len(info.subtitles)}개", False))
-            if len(info.dubs) > 1:
-                bits.append((f"더빙 {len(info.dubs)}개", False))
-            self._set_meta(bits)
-            if info.is_live:
-                self.v_notice.setText("라이브 방송이나 예정된 최초 공개는 받을 수 없어요. 방송이 끝난 뒤 다시 시도해 주세요.")
-                self.v_notice.setVisible(True)
-            if has_playlist_param(self.info_url):
-                self.b_load_playlist.setVisible(True)
-            self.b_download.setText("다운로드")
-        self.b_download.setEnabled(self._can_download(info))
         self._fill_quality_combo()
         self._update_estimate()
-        if info.thumbnail:
-            want = info.thumbnail
 
-            def set_thumb(pm, want=want):
-                if self.info is not None and self.info.thumbnail == want:
-                    self.thumb.setText("")
-                    badge = human_duration(info.duration) if info.kind == "video" and info.duration else None
-                    self.thumb.setPixmap(rounded(pm, THUMB_SIZE, 10, badge=badge))
+    def _download_ready(self, item: ReadyItem) -> None:
+        self._select_ready(item)
+        before = len(self.queue.jobs)
+        self.add_download()
+        if len(self.queue.jobs) > before:
+            self._remove_ready(item)
 
-            self.thumbs.load(info.thumbnail, set_thumb)
-        self._update_panel_state()
+    def _remove_ready(self, item: ReadyItem) -> None:
+        if item not in self._ready:
+            return
+        was_sel = item is self._sel
+        self._ready.remove(item)
+        item.alive = False
+        item.setParent(None)
+        item.deleteLater()
+        if was_sel:
+            self._sel = None
+            self._select_ready(self._ready[0] if self._ready else None, store=False)
+        else:
+            for r in self._ready:
+                r.set_selected(r is self._sel and len(self._ready) > 1)
+        self._apply_filter()
+
+    def _load_playlist_for(self, item: ReadyItem) -> None:
+        self._open_panel()
+        self.url_edit.setText(item.url)
+        self._auto_pending = False
+        self.fetch(force_playlist=True)
 
     # ==================================================================
     # 다운로드 추가
@@ -1020,6 +986,9 @@ class MainWindow(QMainWindow):
             ok = self._filter in ("all", "history") or w.job.options.mode == self._filter
             w.setVisible(ok)
             shown += ok
+        for r in self._ready:
+            r.setVisible(True)
+        shown += len(self._ready)
         self.q_empty.setVisible(shown == 0)
         if self._item_widgets and shown == 0:
             what = "동영상" if self._filter == "video" else "오디오"
@@ -1094,6 +1063,7 @@ class MainWindow(QMainWindow):
                 self.settings.sub_mode = mode
                 self.settings.save()
             self._update_subs_button()
+            self._store_ready_state()
 
     def _cur_tags(self) -> TagState:
         return self.tag_state if self.mode.value() == "audio" else self.vtag_state
@@ -1109,6 +1079,7 @@ class MainWindow(QMainWindow):
                 self.tag_state = result
             else:
                 self.vtag_state = result
+            self._store_ready_state()
             self._update_tags_button()
 
     @staticmethod

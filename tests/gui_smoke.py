@@ -64,7 +64,7 @@ def wait_info(n=[0]):
     if w.fetcher.busy and n[0] < 100:
         QTimer.singleShot(200, wait_info)
         return
-    print("info:", w.info and (w.info.kind, w.info.title), "| download enabled:", w.b_download.isEnabled())
+    print("info:", w.info and (w.info.kind, w.info.title), "| download enabled:", w._sel is not None and w._sel.b_download.isEnabled())
     if not w.info:
         errors.append("info not loaded: " + w.v_notice.text())
     # 실제 유튜브처럼 보이게 가짜 메타데이터로 화질 목록도 확인
