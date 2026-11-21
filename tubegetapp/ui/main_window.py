@@ -26,7 +26,7 @@ from ..core.queue import QueueManager
 from ..core.queue_store import load_jobs, save_jobs
 from ..core.runner import DONE, FAILED, DownloadJob
 from ..utils import (has_playlist_param, has_video_param, human_duration, human_size, is_url,
-                     is_youtube_url, parse_timecode, reveal_in_explorer)
+                     is_youtube_url, reveal_in_explorer)
 from .deps_dialog import DepsDialog
 from .history_view import HistoryView
 from .playlist_dialog import PlaylistDialog
@@ -38,7 +38,7 @@ from . import icons
 from .theme import BORDER, DANGER, ICON, MUTED, WARNING, app_icon, repolish
 from .toast import ToastManager
 from .widgets import (ChipButton, ChipCombo, ElidedLabel, ModeCombo, ThumbLoader, ToggleSwitch, field_label,
-                      icon_button, make_button, pill_check, rounded, show_log_dialog)
+                      icon_button, make_button, rounded, show_log_dialog)
 
 THUMB_SIZE = QSize(176, 99)
 _CHANNEL_RE = re.compile(r"youtube\.com/(?:@[^/?#]+|channel/[^/?#]+|c/[^/?#]+|user/[^/?#]+)/?(?:[?#].*)?$",
@@ -89,8 +89,8 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle(APP_NAME)
         self.setWindowIcon(app_icon())
-        self.resize(1000, 820)
-        self.setMinimumSize(900, 600)
+        self.resize(1120, 820)
+        self.setMinimumSize(1040, 600)
         self.setAcceptDrops(True)
 
         self._build_ui()
@@ -169,6 +169,20 @@ class MainWindow(QMainWindow):
         self.dest_btn = ChipButton()
         self.dest_btn.clicked.connect(self._dest_menu)
         bl.addWidget(self.dest_btn)
+        bl.addSpacing(8)
+        self.l_subs = chip_label("자막")
+        self.b_subs = ChipButton()
+        self.b_subs.setToolTip("받을 자막 언어와 저장 방식을 골라요 (영상마다 따로 정할 수 있어요)")
+        self.b_subs.clicked.connect(self._choose_subs)
+        bl.addWidget(self.l_subs)
+        bl.addWidget(self.b_subs)
+        bl.addSpacing(8)
+        self.l_tags = chip_label("태그")
+        self.b_tags = ChipButton()
+        self.b_tags.setToolTip("음원 파일의 제목·아티스트·앨범·커버 태그를 넣을지, 어떤 값으로 넣을지 골라요")
+        self.b_tags.clicked.connect(self._choose_tags)
+        bl.addWidget(self.l_tags)
+        bl.addWidget(self.b_tags)
         bl.addStretch(1)
 
         self.b_settings = icon_button("gear", "설정", size=22, box=36)
@@ -257,69 +271,7 @@ class MainWindow(QMainWindow):
         meta_col.addWidget(self.b_load_playlist, 0, Qt.AlignmentFlag.AlignLeft)
         meta_col.addStretch(1)
         info_row.addLayout(meta_col, 1)
-        self.b_collapse = make_button("옵션 접기 ▲", ghost=True, tooltip="옵션 영역을 접어서 목록을 넓게 보기")
-        self.b_collapse.clicked.connect(lambda: self._set_collapsed(not self.settings.options_collapsed))
-        info_row.addWidget(self.b_collapse, 0, Qt.AlignmentFlag.AlignTop)
         pl.addWidget(self.info_box)
-
-        # 옵션: 알약 버튼 + 구간 자르기
-        self.options_box = QWidget()
-        ob = QVBoxLayout(self.options_box)
-        ob.setContentsMargins(0, 0, 0, 0)
-        ob.setSpacing(12)
-        line = QFrame()
-        line.setObjectName("Divider")
-        ob.addWidget(line)
-
-        opt_title = QLabel("이 영상에만 적용")
-        opt_title.setObjectName("SectionLabel")
-        ob.addWidget(opt_title)
-        opts = QHBoxLayout()
-        opts.setSpacing(8)
-        self.b_subs = make_button("자막: 없음", tooltip="이 영상에 있는 자막 중에서 받을 언어와 저장 방식을 골라요")
-        self.b_subs.setProperty("pill", True)
-        self.b_subs.clicked.connect(self._choose_subs)
-        opts.addWidget(self.b_subs)
-        self.b_tags = make_button("태그: 켬", tooltip="음원 파일의 제목·아티스트·앨범·커버 태그를 넣을지, 어떤 값으로 넣을지 골라요")
-        self.b_tags.setProperty("pill", True)
-        self.b_tags.clicked.connect(self._choose_tags)
-        opts.addWidget(self.b_tags)
-        self.cb_thumb = pill_check("썸네일 넣기")
-        self.cb_thumb.setToolTip("썸네일을 파일 표지로 넣어요 (MP4/MKV/MP3/M4A 등).")
-        self.cb_compat = pill_check("편집 호환 (H.264)")
-        self.cb_compat.setToolTip("CapCut·프리미어 같은 편집 프로그램이나 오래된 기기에서 잘 열리도록\n"
-                                  "H.264 코덱을 우선해요. 대신 화질이 최대 1080p로 제한될 수 있어요.")
-        for cb in (self.cb_thumb, self.cb_compat):
-            cb.toggled.connect(self._on_option_changed)
-            opts.addWidget(cb)
-        opts.addStretch(1)
-        ob.addLayout(opts)
-
-        sec = QHBoxLayout()
-        sec.setSpacing(8)
-        self.sec_start = QLineEdit()
-        self.sec_start.setPlaceholderText("시작  예: 1:30")
-        self.sec_end = QLineEdit()
-        self.sec_end.setPlaceholderText("끝  예: 2:45")
-        for e in (self.sec_start, self.sec_end):
-            e.setFixedWidth(128)
-            e.textChanged.connect(self._validate_sections)
-        tilde = QLabel("~")
-        tilde.setObjectName("Muted")
-        sec_hint = QLabel("비워두면 영상 전체")
-        sec_hint.setObjectName("Small")
-        sec_label = QLabel("구간 자르기")
-        sec_label.setObjectName("Muted")
-        sec.addWidget(sec_label)
-        sec.addSpacing(6)
-        sec.addWidget(self.sec_start)
-        sec.addWidget(tilde)
-        sec.addWidget(self.sec_end)
-        sec.addSpacing(6)
-        sec.addWidget(sec_hint)
-        sec.addStretch(1)
-        ob.addLayout(sec)
-        pl.addWidget(self.options_box)
 
         # 아래: 예상 크기 + 다운로드 버튼
         self.action_box = QWidget()
@@ -455,8 +407,6 @@ class MainWindow(QMainWindow):
         s = self.settings
         self._loading_ui = True
         self.mode.setValue(s.mode)
-        self.cb_thumb.setChecked(s.embed_thumbnail)
-        self.cb_compat.setChecked(s.compat_h264)
         self.auto_toggle.setCheckedSilently(s.auto_download)
         self._update_dest_chip()
         self._fill_format_combo()
@@ -464,7 +414,6 @@ class MainWindow(QMainWindow):
         self._update_mode_enabled()
         self._loading_ui = False
         self.queue.set_max_concurrent(s.max_concurrent)
-        self._set_collapsed(s.options_collapsed, save=False)
 
     def _fill_format_combo(self) -> None:
         self.fmt.blockSignals(True)
@@ -508,10 +457,10 @@ class MainWindow(QMainWindow):
         # 음원은 화질이 없어서 숨김 (음질은 설정 창에서)
         for w in (self.quality, self.l_quality):
             w.setVisible(video)
-        # 음원은 커버를 태그 창에서 정하므로 '썸네일 넣기' 대신 [태그] 버튼
-        self.cb_thumb.setVisible(video)
-        self.cb_compat.setVisible(video)
-        self.b_tags.setVisible(not video)
+        # 태그는 음원일 때만
+        for w in (self.b_tags, self.l_tags):
+            w.setVisible(not video)
+        self._update_tags_button()
         self._update_subs_button()
         self._update_estimate()
 
@@ -530,35 +479,22 @@ class MainWindow(QMainWindow):
         else:
             s.container = self.fmt.currentData() or "mp4"
             s.max_height = int(self.quality.currentData() or 0)
-        s.embed_thumbnail = self.cb_thumb.isChecked()
-        s.compat_h264 = self.cb_compat.isChecked()
         s.save()
-        self._update_collapsed_summary()
 
     def _update_estimate(self) -> None:
-        prefix = getattr(self, "_collapsed_text", "")
-        prefix = f"{prefix}   " if prefix else ""
         info = self.info
         if not info:
-            self.est_label.setText(prefix.strip())
+            self.est_label.setText("")
             return
         if info.kind == "playlist":
             n = sum(1 for e in info.entries if e.available)
-            self.est_label.setText(f"{prefix}받을 수 있는 영상 {n}개")
+            self.est_label.setText(f"받을 수 있는 영상 {n}개")
             return
         if self.mode.value() == "audio":
             size = info.estimated_size(0, "audio")
         else:
             size = info.estimated_size(int(self.quality.currentData() or 0))
-        self.est_label.setText(prefix + (f"예상 크기 ≈ {human_size(size)}" if size else ""))
-
-    def _validate_sections(self) -> bool:
-        ok = True
-        for e in (self.sec_start, self.sec_end):
-            bad = bool(e.text().strip()) and parse_timecode(e.text()) is None
-            e.setStyleSheet(f"border-color: {DANGER};" if bad else "")
-            ok = ok and not bad
-        return ok
+        self.est_label.setText((f"예상 크기 ≈ {human_size(size)}" if size else ""))
 
     # ==================================================================
     # 도구 확인 / 업데이트
@@ -734,7 +670,6 @@ class MainWindow(QMainWindow):
         has_notice = bool(self.v_notice.text()) and not self.v_notice.isHidden()
         self.panel.setVisible(self._panel_open)
         self.info_box.setVisible(has_info)
-        self.options_box.setVisible(has_info and not self.settings.options_collapsed)
         self.action_box.setVisible(has_info)
         self.notice_box.setVisible(has_notice or self.b_fetch_log.isVisibleTo(self.notice_box))
 
@@ -931,18 +866,6 @@ class MainWindow(QMainWindow):
         m.deleteLater()
 
     def _current_options(self) -> Optional[DownloadOptions]:
-        if not self._validate_sections():
-            QMessageBox.warning(self, "구간 형식", "구간은 1:30 또는 01:02:03 처럼 입력해 주세요.")
-            return None
-        start = parse_timecode(self.sec_start.text())
-        end = parse_timecode(self.sec_end.text())
-        if start is not None and end is not None and start >= end:
-            QMessageBox.warning(self, "구간", "끝 시간이 시작 시간보다 뒤여야 해요.")
-            return None
-        info = self.info
-        if info and info.kind == "video" and info.duration and start is not None and start >= info.duration:
-            QMessageBox.warning(self, "구간", f"영상 길이({human_duration(info.duration)})보다 시작 시간이 뒤예요.")
-            return None
         s = self.settings
         out_dir = self._ensure_dir()
         if not Path(out_dir).is_dir():
@@ -952,14 +875,14 @@ class MainWindow(QMainWindow):
             mode=self.mode.value(),
             max_height=int(self.quality.currentData() or 0),
             container=s.container,
-            compat_h264=self.cb_compat.isChecked(),
+            compat_h264=s.compat_h264,
             audio_format=s.audio_format,
             audio_quality=s.audio_quality,
             sub_langs=",".join(self.sub_langs),
             auto_subs=self.sub_auto,
             sub_mode=s.sub_mode,
             overwrite=s.overwrite_existing,
-            embed_thumbnail=self.tag_state.cover if self.mode.value() == "audio" else self.cb_thumb.isChecked(),
+            embed_thumbnail=self.tag_state.cover if self.mode.value() == "audio" else True,
             audio_tags=self.tag_state.on,
             tag_values=dict(self.tag_state.values) if self.tag_state.values else None,
             tag_smart=self.tag_state.smart,
@@ -968,8 +891,8 @@ class MainWindow(QMainWindow):
             filename_template=s.filename_template,
             cookies_browser=s.cookies_browser,
             rate_limit=s.rate_limit,
-            section_start=start,
-            section_end=end,
+            section_start=None,
+            section_end=None,
         )
 
     def add_download(self) -> None:
@@ -1024,9 +947,6 @@ class MainWindow(QMainWindow):
             self.status_msg.setText("다운로드 목록에 추가했어요")
         if self._filter == "history" or self._filter not in ("all", opts.mode):
             self._set_filter("all")
-        if self.sec_start.text() or self.sec_end.text():
-            self.sec_start.clear()
-            self.sec_end.clear()
 
     def _redownload(self, url: str) -> None:
         if not url:
@@ -1173,12 +1093,16 @@ class MainWindow(QMainWindow):
         if accepted:
             self.tag_state = result
             self._update_tags_button()
-            self._update_collapsed_summary()
+
+    @staticmethod
+    def _clip(text: str, n: int = 9) -> str:
+        return text if len(text) <= n else text[:n - 1] + "…"
 
     def _update_tags_button(self) -> None:
         text = self.tag_state.button_text()
-        self.b_tags.setText(text if len(text) <= 34 else text[:33] + "…")
-        self._set_pill_active(self.b_tags, self.tag_state.on)
+        if text.startswith("태그: "):
+            text = text[4:]
+        self.b_tags.setText(self._clip(text, 9))
         if self.tag_state.on and self.tag_state.values:
             v = self.tag_state.values
             self.b_tags.setToolTip("\n".join(f"{k}: {v.get(f, '')}" for f, k in
@@ -1189,12 +1113,13 @@ class MainWindow(QMainWindow):
     def _update_subs_button(self) -> None:
         audio = self.mode.value() == "audio"
         text = summarize(self.sub_langs, self.sub_auto, self.settings.sub_mode, audio)
-        self.b_subs.setText(text)
+        if text.startswith("자막: "):
+            text = text[4:]
         info = self.info
         if info is not None and info.kind == "video" and not info.subtitles and not info.auto_captions:
-            self.b_subs.setText("자막: 이 영상엔 없음")
-        self._set_pill_active(self.b_subs, bool(self.sub_langs))
-        self._update_collapsed_summary()
+            text = "이 영상엔 없음"
+        self.b_subs.setToolTip("받을 자막 언어와 저장 방식을 골라요 (영상마다 따로 정할 수 있어요)\n지금: " + text)
+        self.b_subs.setText(self._clip(text, 9))
 
     @staticmethod
     def _set_pill_active(btn: QPushButton, on: bool) -> None:
@@ -1202,37 +1127,6 @@ class MainWindow(QMainWindow):
         if bool(btn.property("active")) != on:
             btn.setProperty("active", on)
             repolish(btn)
-
-    def _set_collapsed(self, collapsed: bool, save: bool = True) -> None:
-        self.settings.options_collapsed = collapsed
-        self.b_collapse.setText("옵션 펼치기 ▼" if collapsed else "옵션 접기 ▲")
-        self._update_panel_state()
-        self._update_collapsed_summary()
-        if save:
-            self.settings.save()
-
-    def _update_collapsed_summary(self) -> None:
-        if not hasattr(self, "options_box"):
-            return
-        if self.settings.options_collapsed and hasattr(self, "fmt"):
-            try:
-                o = self._options_preview()
-                self.est_label.setToolTip(o)
-                self._collapsed_text = o
-            except Exception:  # noqa: BLE001
-                self._collapsed_text = ""
-        else:
-            self._collapsed_text = ""
-        self._update_estimate()
-
-    def _options_preview(self) -> str:
-        s = self.settings
-        preview = DownloadOptions(
-            mode=self.mode.value(), max_height=int(self.quality.currentData() or 0), container=s.container,
-            compat_h264=self.cb_compat.isChecked(), audio_format=s.audio_format,
-            audio_tags=self.tag_state.on, tag_values=self.tag_state.values, tag_smart=self.tag_state.smart,
-            sub_langs=",".join(self.sub_langs), sub_mode=s.sub_mode)
-        return preview.summary()
 
     def _schedule_save(self) -> None:
         if not self._closing and not self._save_timer.isActive():

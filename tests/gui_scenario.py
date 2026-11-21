@@ -85,11 +85,11 @@ def step_info():
     check(set(info.subtitles) == {"en", "ko"}, "올린 자막 en, ko (live_chat 제외)")
     check(len(info.auto_captions) == 13, f"자동 자막 {len(info.auto_captions)}개")
     check(w.sub_langs == ["ko"], f"설정 기본 언어(ko) 미리 선택됨: {w.sub_langs}")
-    check(w.b_subs.text().startswith("자막: 한국어"), "자막 버튼 표시: " + w.b_subs.text())
+    check(w.b_subs.text().startswith("한국어") and w.b_subs.isVisible(), "자막 버튼 표시: " + w.b_subs.text())
     qtexts = [w.quality.itemText(i) for i in range(w.quality.count())]
     print("     화질 항목:", qtexts[:4], "…")
     w.quality.setCurrentIndex(w.quality.findData(1080))
-    w.cb_compat.setChecked(True)
+    w.settings.compat_h264 = True
     QTimer.singleShot(400, lambda: (shot("s01_info"), step_subs()))   # 썸네일 로딩 대기
 
 
@@ -189,15 +189,8 @@ def step_remove():
 def step_after_remove():
     left = [p.name for p in out.iterdir() if ".part" in p.name or ".ytdl" in p.name or ".f1" in p.name]
     check(not left, f"목록에서 지우면 임시 파일 삭제 (남은 것: {left})")
-    results["list_h"] = w.stack.height()
-    w._set_collapsed(True)
-    QTimer.singleShot(300, step_collapsed)
-
-
-def step_collapsed():
-    check(not w.options_box.isVisible(), "옵션 접기")
-    check(w.stack.height() > results["list_h"], f"접으면 다운로드 목록이 더 넓어짐 ({results['list_h']} → {w.stack.height()})")
-    shot("s05_collapsed")
+    check(not hasattr(w, "options_box") and not hasattr(w, "sec_start"), "옵션 상자·구간 자르기 UI 없음")
+    shot("s05_after_remove")
     step_persist()
 
 

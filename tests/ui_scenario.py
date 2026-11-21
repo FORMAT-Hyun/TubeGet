@@ -106,10 +106,12 @@ shot("u02_info")
 w.mode.setValue("audio")
 w._on_mode_changed("audio")
 check(not w.quality.isVisible() and not w.l_quality.isVisible(), "오디오에서는 화질 칩 숨김")
-check(w.fmt.currentData() == "mp3" and w.b_tags.isVisible() and not w.cb_thumb.isVisible(), "오디오 형식/태그 버튼")
+check(w.fmt.currentData() == "mp3" and w.b_tags.isVisible() and w.l_tags.isVisible(), "오디오 형식/태그 버튼")
+check(w.b_subs.isVisible() and w.l_subs.isVisible(), "자막 칩이 위쪽 바에 보임")
 shot("u03_audio")
 w.mode.setValue("video")
 w._on_mode_changed("video")
+check(not w.b_tags.isVisible() and w.b_subs.isVisible(), "영상 모드: 태그 숨김, 자막 보임")
 check(w.quality.isVisible(), "영상으로 돌아오면 화질 칩 보임")
 
 # --- 바로 받기 -----------------------------------------------------------------

@@ -90,10 +90,10 @@ def start():
 
 
 def step_info():
-    check(w.b_tags.isVisible() and not w.cb_thumb.isVisible(), "음원 모드: [태그] 버튼 보이고 '썸네일 넣기' 숨김")
+    check(w.b_tags.isVisible() and w.l_tags.isVisible(), "음원 모드: 위쪽 바에 [태그] 보임")
     check(w.tag_state.values == {"title": "Way Less Sad", "artist": "AJR", "album": "", "year": ""},
           f"자동 정리 값 미리 채움 {w.tag_state.values}")
-    check(w.b_tags.text() == "태그: AJR / Way Less Sad", "버튼 표시: " + w.b_tags.text())
+    check(w.b_tags.text().startswith("AJR"), "버튼 표시: " + w.b_tags.text())
     QTimer.singleShot(300, lambda: (w.grab().save(str(shots / "t01_audio_mode.png")), step_edit()))
 
 
@@ -130,7 +130,7 @@ def step_edit_check(job):
     dialog_then(off)
     w._choose_tags()
     w.settings.overwrite_existing = True   # 같은 이름 파일이 있으니 덮어쓰기
-    check(w.b_tags.text() == "태그: 끔", "버튼 표시: " + w.b_tags.text())
+    check(w.b_tags.text() == "끔", "버튼 표시: " + w.b_tags.text())
     w.add_download()
     job2 = w.queue.jobs[-1]
     wait(lambda: not job2.is_active, lambda: step_off_check(job2))
@@ -151,7 +151,7 @@ def step_off_check(job):
          "title": "AJR - Way Less Sad (Official Video)"}]}
     w._set_info(parse_info(data))
     check(w.tag_state.smart and w.tag_state.values is None, "재생목록은 자동 정리 모드")
-    check(w.b_tags.text() == "태그: 켬 (자동 정리)", "버튼 표시: " + w.b_tags.text())
+    check(w.b_tags.text() == "켬 (자동 정리)", "버튼 표시: " + w.b_tags.text())
 
     def pl(dlg):
         dlg.accept()
