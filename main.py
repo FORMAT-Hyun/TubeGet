@@ -1,13 +1,30 @@
 """TubeGet 실행 진입점."""
+import os
 import sys
 
-from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QApplication
+# 어느 폴더에서 실행하든 이 파일 옆의 tubegetapp 폴더를 찾도록
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from tubeget import APP_NAME
-from tubeget.single_instance import InstanceServer, notify_running_instance
-from tubeget.ui.main_window import MainWindow
-from tubeget.ui.theme import app_icon, apply_theme
+from PySide6.QtCore import Qt  # noqa: E402
+from PySide6.QtWidgets import QApplication, QMessageBox  # noqa: E402
+
+try:
+    from tubegetapp import APP_NAME
+    from tubegetapp.single_instance import InstanceServer, notify_running_instance
+    from tubegetapp.ui.main_window import MainWindow
+    from tubegetapp.ui.theme import app_icon, apply_theme
+except ModuleNotFoundError as exc:  # 압축이 덜 풀렸거나 폴더가 섞인 경우
+    if "tubegetapp" not in str(exc):
+        raise
+    _app = QApplication(sys.argv)
+    QMessageBox.critical(
+        None, "TubeGet",
+        "프로그램 파일(tubegetapp 폴더)을 찾을 수 없어요.\n\n"
+        "압축 파일을 마우스 오른쪽 → '모두 압축 풀기'로 새 폴더에 전부 푼 다음,\n"
+        "그 폴더 안의 run_windows.bat 으로 실행해 주세요.\n"
+        "(예전 버전 폴더 위에 덮어서 풀면 이런 문제가 생길 수 있어요)\n\n"
+        f"찾은 위치: {os.path.dirname(os.path.abspath(__file__))}")
+    sys.exit(1)
 
 
 def main() -> int:

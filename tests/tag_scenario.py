@@ -20,10 +20,10 @@ os.environ.update(FAKE_BASE=base, FAKE_SRV=srv, FAKE_INFO=str(Path(home) / "fake
 from PySide6.QtCore import QTimer  # noqa: E402
 from PySide6.QtWidgets import QApplication, QDialog  # noqa: E402
 
-from tubeget.config import Settings  # noqa: E402
-from tubeget.core.metadata import parse_info  # noqa: E402
-from tubeget.paths import bin_dir  # noqa: E402
-from tubeget.ui.theme import apply_theme  # noqa: E402
+from tubegetapp.config import Settings  # noqa: E402
+from tubegetapp.core.metadata import parse_info  # noqa: E402
+from tubegetapp.paths import bin_dir  # noqa: E402
+from tubegetapp.ui.theme import apply_theme  # noqa: E402
 
 wr = bin_dir() / "yt-dlp"
 wr.write_text(f'#!/bin/sh\nexec {sys.executable} {ROOT / "tests" / "fake_youtube.py"} "$@"\n')
@@ -36,7 +36,7 @@ s.mode = "audio"
 s.filename_template = "%(title)s [%(id)s] %(autonumber)s.%(ext)s"
 s.save()
 
-from tubeget.ui.main_window import MainWindow  # noqa: E402
+from tubegetapp.ui.main_window import MainWindow  # noqa: E402
 
 app = QApplication([])
 apply_theme(app)

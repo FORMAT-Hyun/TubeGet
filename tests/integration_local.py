@@ -15,12 +15,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from PySide6.QtCore import QCoreApplication, QTimer  # noqa: E402
 
-from tubeget.core.deps import check_all  # noqa: E402
-from tubeget.core.fetcher import InfoFetcher  # noqa: E402
-from tubeget.core.options import DownloadOptions  # noqa: E402
-from tubeget.core.queue import QueueManager  # noqa: E402
-from tubeget.core.runner import DownloadJob  # noqa: E402
-from tubeget.paths import bin_dir  # noqa: E402
+from tubegetapp.core.deps import check_all  # noqa: E402
+from tubegetapp.core.fetcher import InfoFetcher  # noqa: E402
+from tubegetapp.core.options import DownloadOptions  # noqa: E402
+from tubegetapp.core.queue import QueueManager  # noqa: E402
+from tubegetapp.core.runner import DownloadJob  # noqa: E402
+from tubegetapp.paths import bin_dir  # noqa: E402
 
 base = sys.argv[1].rstrip("/")
 if not USE_EXISTING:

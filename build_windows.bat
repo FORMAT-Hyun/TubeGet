@@ -19,6 +19,8 @@ echo [TubeGet] exe 만드는 중... (몇 분 걸려요)
     --name TubeGet ^
     --icon assets\icon.ico ^
     --add-data "assets;assets" ^
+    --paths "%CD%" ^
+    --collect-submodules tubegetapp ^
     main.py
 
 if exist "dist\TubeGet\TubeGet.exe" (

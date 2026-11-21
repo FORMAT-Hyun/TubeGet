@@ -15,10 +15,10 @@ sys.path.insert(0, str(ROOT))
 from PySide6.QtCore import QTimer  # noqa: E402
 from PySide6.QtWidgets import QApplication, QDialog  # noqa: E402
 
-from tubeget.config import Settings  # noqa: E402
-from tubeget.core.metadata import parse_info  # noqa: E402
-from tubeget.paths import bin_dir  # noqa: E402
-from tubeget.ui.theme import apply_theme  # noqa: E402
+from tubegetapp.config import Settings  # noqa: E402
+from tubegetapp.core.metadata import parse_info  # noqa: E402
+from tubegetapp.paths import bin_dir  # noqa: E402
+from tubegetapp.ui.theme import apply_theme  # noqa: E402
 
 base = sys.argv[1].rstrip("/")
 shots = Path(sys.argv[2])
@@ -33,7 +33,7 @@ s.auto_update_ytdlp = False
 s.clipboard_autofetch = False
 s.save()
 
-from tubeget.ui.main_window import MainWindow  # noqa: E402
+from tubegetapp.ui.main_window import MainWindow  # noqa: E402
 
 app = QApplication([])
 apply_theme(app)
@@ -142,14 +142,14 @@ def wait_playlist(n=[0]):
 
 
 def settings_shot():
-    from tubeget.ui.settings_dialog import SettingsDialog
+    from tubegetapp.ui.settings_dialog import SettingsDialog
     d = SettingsDialog(w.settings, w)
     d.show()
     QTimer.singleShot(200, lambda: (d.grab().save(str(shots / "09_settings.png")), d.close(), deps_shot()))
 
 
 def deps_shot():
-    from tubeget.ui.deps_dialog import DepsDialog
+    from tubegetapp.ui.deps_dialog import DepsDialog
     d = DepsDialog(w.deps, w)
     d.show()
     QTimer.singleShot(200, lambda: (d.grab().save(str(shots / "10_deps.png")), d.close(), finish()))

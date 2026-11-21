@@ -2,6 +2,13 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 
+if not exist "tubegetapp\__init__.py" (
+    echo 프로그램 파일^(tubegetapp 폴더^)이 없어요.
+    echo 압축 파일을 '모두 압축 풀기'로 새 폴더에 전부 푼 다음 다시 실행해 주세요.
+    pause
+    exit /b 1
+)
+
 if not exist ".venv\Scripts\python.exe" (
     echo [TubeGet] 처음 실행: 파이썬 가상환경을 만드는 중...
     py -3 -m venv .venv 2>nul || python -m venv .venv

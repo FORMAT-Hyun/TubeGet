@@ -7,12 +7,12 @@ from pathlib import Path
 os.environ.setdefault("TUBEGET_HOME", tempfile.mkdtemp(prefix="tubeget-test-"))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from tubeget.core.errors import explain  # noqa: E402
-from tubeget.core.metadata import parse_info  # noqa: E402
-from tubeget.core.options import DownloadOptions, build_args, info_args  # noqa: E402
-from tubeget.core.progress import overall_fraction, parse_line  # noqa: E402
-from tubeget.core.options import subtitle_args  # noqa: E402
-from tubeget.utils import format_timecode, parse_timecode, sanitize_filename  # noqa: E402
+from tubegetapp.core.errors import explain  # noqa: E402
+from tubegetapp.core.metadata import parse_info  # noqa: E402
+from tubegetapp.core.options import DownloadOptions, build_args, info_args  # noqa: E402
+from tubegetapp.core.progress import overall_fraction, parse_line  # noqa: E402
+from tubegetapp.core.options import subtitle_args  # noqa: E402
+from tubegetapp.utils import format_timecode, parse_timecode, sanitize_filename  # noqa: E402
 
 
 def _after(args, flag):
@@ -213,14 +213,14 @@ def test_parse_subtitles():
 
 
 def _info(**kw):
-    from tubeget.core.metadata import MediaInfo
+    from tubegetapp.core.metadata import MediaInfo
     base = dict(kind="video", title="", uploader="", track="", artist="", album="", upload_date="")
     base.update(kw)
     return MediaInfo(**base)
 
 
 def test_guess_tags():
-    from tubeget.core.tags import guess_tags, raw_tags
+    from tubegetapp.core.tags import guess_tags, raw_tags
     g = guess_tags(_info(title="AJR - Way Less Sad (Official Video)", uploader="AJR", upload_date="20210512"))
     assert g == {"title": "Way Less Sad", "artist": "AJR", "album": "", "year": "2021"}
     g = guess_tags(_info(title="아이유(IU) – 밤편지 [MV] 【Lyrics】", uploader="이지금 [IU Official]"))
@@ -234,7 +234,7 @@ def test_guess_tags():
 
 
 def test_tag_args():
-    from tubeget.core.tags import custom_args
+    from tubegetapp.core.tags import custom_args
     a = custom_args({"title": "AJR: 100% 진짜", "artist": "AJR", "album": "", "year": "2019"})
     assert a[1] == "#AJR\\: 100%% 진짜:#(?P<meta_title>.*)"
     assert ":(?P<meta_album>)" in a and "#2019:#(?P<meta_date>.*)" in a

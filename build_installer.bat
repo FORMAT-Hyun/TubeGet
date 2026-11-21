@@ -6,6 +6,11 @@ echo ================================================
 echo   TubeGet 설치 파일 만들기
 echo ================================================
 echo.
+if exist "tubegetapp\__init__.py" goto have_src
+echo 프로그램 파일(tubegetapp 폴더)이 없어요.
+echo 압축 파일을 '모두 압축 풀기'로 새 폴더에 전부 푼 다음 다시 실행해 주세요.
+goto fail
+:have_src
 
 rem ---- 1. 파이썬 가상환경 ----
 if exist ".venv\Scripts\python.exe" goto have_venv
@@ -27,7 +32,7 @@ if errorlevel 1 goto fail
 rem ---- 2. exe 빌드 ----
 echo [3/4] 프로그램 빌드 중... (몇 분 걸려요)
 if exist "dist\TubeGet" rmdir /s /q "dist\TubeGet"
-"%PY%" -m PyInstaller --noconfirm --clean --windowed --name TubeGet --icon assets\icon.ico --add-data "assets;assets" main.py
+"%PY%" -m PyInstaller --noconfirm --clean --windowed --name TubeGet --icon assets\icon.ico --add-data "assets;assets" --paths "%CD%" --collect-submodules tubegetapp main.py
 if not exist "dist\TubeGet\TubeGet.exe" goto fail
 
 rem ---- 3. Inno Setup 찾기 (없으면 winget 으로 설치) ----
@@ -44,8 +49,12 @@ goto fail
 :have_iscc
 
 rem ---- 4. 설치 파일 만들기 ----
-for /f "usebackq delims=" %%v in (`%PY% -c "import tubeget; print(tubeget.APP_VERSION)"`) do set "VER=%%v"
-echo [4/4] 설치 파일 만드는 중... (버전 %VER%)
+for /f "usebackq delims=" %%v in (`%PY% -c "import tubegetapp; print(tubegetapp.APP_VERSION)"`) do set "VER=%%v"
+if not defined VER (
+    echo 버전 정보를 읽지 못했어요.
+    goto fail
+)
+echo [4/4] 설치 파일 만드는 중... ^(버전 %VER%^)
 "%ISCC%" /Q "/DMyAppVersion=%VER%" "installer\TubeGet.iss"
 if errorlevel 1 goto fail
 if not exist "dist\TubeGet-Setup-%VER%.exe" goto fail

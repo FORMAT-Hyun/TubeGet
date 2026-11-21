@@ -30,6 +30,9 @@
 
 ## 실행하기 (Windows)
 
+> **새 버전을 받으면 예전 폴더에 덮어쓰지 말고 새 폴더에 풀어주세요.** 압축 파일을 마우스 오른쪽 → **'모두 압축 풀기'**를 쓰면 돼요.
+> 설정, 기록, 설치된 도구는 `%APPDATA%\TubeGet`에 따로 있어서 예전 폴더를 지워도 그대로 남아요.
+
 1. [Python 3.10 이상](https://www.python.org/downloads/)을 설치합니다. 설치 화면에서 **"Add python.exe to PATH"를 꼭 체크**하세요.
 2. 이 폴더의 **`run_windows.bat`을 더블클릭**합니다.
    처음 한 번은 필요한 패키지(PySide6)를 설치하느라 1~2분 걸려요.
@@ -39,7 +42,7 @@ macOS나 Linux에서는 `./run.sh`로 실행합니다. macOS는 ffmpeg를 `brew 
 
 ### 설치 파일 만들기 (추천)
 
-**`build_installer.bat`을 더블클릭**하면 `dist\TubeGet-Setup-0.0.1.exe` 설치 파일이 만들어집니다.
+**`build_installer.bat`을 더블클릭**하면 `dist\TubeGet-Setup-0.0.2.exe` 설치 파일이 만들어집니다.
 처음 실행하면 PyInstaller와 Inno Setup(winget으로 자동 설치)을 준비하느라 몇 분 걸려요.
 
 설치 파일을 실행하면 일반 프로그램처럼 설치 마법사가 열립니다.
@@ -83,7 +86,7 @@ macOS나 Linux에서는 `./run.sh`로 실행합니다. macOS는 ffmpeg를 `brew 
 main.py                    진입점
 installer/TubeGet.iss      설치 마법사 스크립트 (Inno Setup)
 build_installer.bat        exe 빌드부터 설치 파일 생성까지 한 번에
-tubeget/
+tubegetapp/
   config.py                설정 (JSON)
   paths.py / utils.py      경로, 포맷팅, 파일명 정리
   core/
