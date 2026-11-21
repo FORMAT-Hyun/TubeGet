@@ -44,6 +44,7 @@ from .widgets import (ChipButton, ChipCombo, ElidedLabel, ModeCombo, ThumbLoader
 from ..i18n import current_language, resolve, tr
 
 THUMB_SIZE = QSize(176, 99)
+MIN_WINDOW_WIDTH = 1160
 _CHANNEL_RE = re.compile(r"youtube\.com/(?:@[^/?#]+|channel/[^/?#]+|c/[^/?#]+|user/[^/?#]+)/?(?:[?#].*)?$",
                          re.IGNORECASE)
 
@@ -97,7 +98,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle(APP_NAME)
         self.setWindowIcon(app_icon())
         self.resize(1200, 820)
-        self.setMinimumSize(1160, 600)
+        self.setMinimumSize(MIN_WINDOW_WIDTH, 600)
         self.setAcceptDrops(True)
 
         self._build_ui()
@@ -199,6 +200,9 @@ class MainWindow(QMainWindow):
         bl.addWidget(self.b_settings)
         bl.addWidget(self.b_tools)
         root.addWidget(bar)
+        # 칩 글자가 길어지면(언어·자막 선택에 따라) 창이 툴바보다 좁아져 버튼이 겹치지 않게
+        self.toolbar = bar
+        bar.installEventFilter(self)
 
         self.fetch_bar = QProgressBar()
         self.fetch_bar.setRange(0, 0)
@@ -1099,16 +1103,26 @@ class MainWindow(QMainWindow):
             self._store_ready_state()
             self._update_tags_button()
 
+    def eventFilter(self, obj, event) -> bool:  # noqa: N802
+        if obj is getattr(self, "toolbar", None) and event.type() == QEvent.Type.LayoutRequest:
+            need = max(MIN_WINDOW_WIDTH, self.toolbar.minimumSizeHint().width())
+            if need != self.minimumWidth():
+                self.setMinimumWidth(need)
+        return super().eventFilter(obj, event)
+
     @staticmethod
-    def _clip(text: str, n: int = 9) -> str:
-        return text if len(text) <= n else text[:n - 1] + "…"
+    def _clip(widget: QWidget, text: str, n: int = 9) -> str:
+        """칩 글자를 '한글 n글자' 너비까지만 보이게 줄인다 (언어마다 글자 폭이 달라서 픽셀로 잰다)."""
+        fm = widget.fontMetrics()
+        return fm.elidedText(text, Qt.TextElideMode.ElideRight, fm.horizontalAdvance("가" * n))
 
     def _update_tags_button(self) -> None:
         ts = self._cur_tags()
         text = ts.button_text()
-        if text.startswith(tr("태그: ")):
-            text = text[4:]
-        self.b_tags.setText(self._clip(text, 9))
+        prefix = tr("태그: ")
+        if text.startswith(prefix):
+            text = text[len(prefix):]
+        self.b_tags.setText(self._clip(self.b_tags, text, 9))
         if ts.on and ts.values:
             v = ts.values
             self.b_tags.setToolTip("\n".join(f"{k}: {v.get(f, '')}" for f, k in
@@ -1127,7 +1141,7 @@ class MainWindow(QMainWindow):
         if self.dub_lang:
             text += tr(" · {dub_name} 더빙").format(dub_name=dub_name(self.dub_lang))
         self.b_subs.setToolTip(tr("받을 자막 언어, 더빙(음성 언어), 저장 방식을 골라요 (영상마다 따로 정할 수 있어요)\n지금: ") + full)
-        self.b_subs.setText(self._clip(text, 15))
+        self.b_subs.setText(self._clip(self.b_subs, text, 8))
 
     @staticmethod
     def _set_pill_active(btn: QPushButton, on: bool) -> None:

@@ -246,7 +246,7 @@ QPlainTextEdit {{
     background: {INPUT_BG}; border: 1px solid {BORDER}; border-radius: 8px;
     font-family: "Cascadia Mono", Consolas, "D2Coding", monospace; font-size: 9pt;
 }}
-QMessageBox QLabel {{ min-width: 320px; }}
+QMessageBox QLabel#qt_msgbox_label {{ min-width: 320px; }}   /* 아이콘 칸까지 넓어지지 않게 글 칸에만 */
 """
 
 

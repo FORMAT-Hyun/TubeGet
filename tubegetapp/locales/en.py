@@ -205,7 +205,7 @@ STRINGS: dict[str, str] = {
         "That isn't a valid address. Enter an address starting with https://",
     "채널 주소예요. 채널의 '동영상' 탭 주소(…/videos)나 재생목록 주소를 넣어 주세요.":
         "That's a channel address. Enter the channel's 'Videos' tab address (…/videos) or a playlist address.",
-    "바로 받기": "Instant download",
+    "바로 받기": "Instant",
     "바로 받기\n켜면 링크를 붙여넣자마자 지금 고른 설정으로 바로 다운로드해요.\n(재생목록은 고르는 창이 떠요)":
         "Instant download\nWhen on, pasting a link downloads it right away with the current settings.\n(Playlists open a selection window)",
     "바로 받기 끔 - 링크를 붙여넣으면 정보를 먼저 보여줘요": "Instant download off - pasting a link shows the info first",
@@ -219,7 +219,7 @@ STRINGS: dict[str, str] = {
     "최고": "Best",
     "최대 {label}": "Up to {label}",
     "최대 {height_label}": "Up to {height_label}",
-    "저장 위치": "Save location",
+    "저장 위치": "Save to",
     "저장 위치 선택": "Choose save location",
     "저장 폴더를 만들 수 없어요:\n{out_dir}": "Could not create the save folder:\n{out_dir}",
     "폴더 변경…": "Change folder…",
@@ -233,7 +233,7 @@ STRINGS: dict[str, str] = {
     "받은 동영상이 없어요": "No downloaded videos",
     "받은 오디오가 없어요": "No downloaded audio",
     "다른 탭에서 전체 목록을 볼 수 있어요.": "You can see the full list in another tab.",
-    "{len} 아이템": "{len} items",
+    "{len} 아이템": "{len} item(s)",
     "진행 {v}": "Active {v}",
     "대기 {v}": "Waiting {v}",
     "완료 {v}": "Done {v}",
@@ -374,7 +374,7 @@ STRINGS: dict[str, str] = {
 
     # ---- subtitles / dubbing dialog ----
     "자막 / 더빙 선택": "Choose subtitles / dubbing",
-    "자막/더빙": "Subtitles/Dubbing",
+    "자막/더빙": "Subs/Dub",
     "자막 없음": "No subtitles",
     "자막 없음 · 더빙 {dub_name}": "No subtitles · Dub {dub_name}",
     "자막: 없음": "Subtitles: none",
@@ -441,9 +441,9 @@ STRINGS: dict[str, str] = {
     "음원 태그": "Audio tags",
     "태그 넣기": "Embed tags",
     "태그: ": "Tags: ",
-    "태그: 끔": "Tags: off",
-    "태그: 켬": "Tags: on",
-    "태그: 켬 (자동 정리)": "Tags: on (auto-clean)",
+    "태그: 끔": "Tags: Off",
+    "태그: 켬": "Tags: On",
+    "태그: 켬 (자동 정리)": "Tags: On (auto-clean)",
     "켬": "On",
     "음원 파일의 제목·아티스트·앨범·커버 태그를 넣을지, 어떤 값으로 넣을지 골라요":
         "Choose whether to add title, artist, album and cover tags to audio files, and with what values",
