@@ -13,6 +13,7 @@ try:
     from tubegetapp.single_instance import InstanceServer, notify_running_instance
     from tubegetapp.ui.main_window import MainWindow
     from tubegetapp.ui.theme import app_icon, apply_theme
+    from tubegetapp.ui.wheel_guard import install as install_wheel_guard
     from tubegetapp.i18n import current_language
 except ModuleNotFoundError as exc:  # 압축이 덜 풀렸거나 폴더가 섞인 경우
     if "tubegetapp" not in str(exc):
@@ -60,6 +61,7 @@ def main() -> int:
         return 0  # 이미 켜져 있는 창을 앞으로 가져옴
     server = InstanceServer(app)
     apply_theme(app)
+    install_wheel_guard(app)       # 스크롤하다 드롭다운 값이 바뀌지 않게
     win = MainWindow()
     server.activated.connect(win._raise)
     win.show()

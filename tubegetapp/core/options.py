@@ -28,6 +28,7 @@ AUDIO_QUALITIES = [
 HEIGHT_CHOICES = [2160, 1440, 1080, 720, 480, 360, 240, 144]
 
 _LOSSY_AUDIO = {"mp3", "m4a", "opus"}
+LOSSY_AUDIO = _LOSSY_AUDIO          # 음질(비트레이트)을 고를 수 있는 형식
 _THUMB_AUDIO = {"mp3", "m4a", "opus", "flac", "best"}
 _THUMB_VIDEO = {"mp4", "mkv"}
 

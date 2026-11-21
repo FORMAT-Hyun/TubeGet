@@ -5,8 +5,8 @@ import platform
 from typing import Optional
 
 import PySide6
-from PySide6.QtCore import Qt, qVersion
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtCore import Qt, QUrl, qVersion
+from PySide6.QtGui import QDesktopServices, QGuiApplication
 from PySide6.QtWidgets import (QDialog, QFormLayout, QFrame, QHBoxLayout, QLabel, QVBoxLayout,
                                QWidget)
 
@@ -18,7 +18,9 @@ from .theme import make_icon_pixmap
 from .widgets import make_button
 from ..i18n import tr
 
-NOTICE = (tr("TubeGet은 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요."))
+REPO_URL = "https://github.com/FORMAT-Hyun/TubeGet"
+
+NOTICE = (tr("TubeGet은 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요. MIT 라이선스로 공개돼 있어요."))
 LICENSES = tr("사용한 도구: yt-dlp(Unlicense), FFmpeg(LGPL/GPL), Qt for Python·PySide6(LGPL). 각 도구는 자기 라이선스를 따라요.")
 
 
@@ -43,6 +45,7 @@ def report_text(deps: Optional[Deps]) -> str:
         tr("JS 런타임: {v}").format(v=(js.name + ' ' + tool_line(js)) if js else tr('없음')),
         f"Python {platform.python_version()} · PySide6 {PySide6.__version__} · Qt {qVersion()}",
         f"OS: {platform.platform()}",
+        REPO_URL,
     ]
     return "\n".join(lines)
 
@@ -103,6 +106,15 @@ class AboutDialog(QDialog):
         row(tr("실행 환경"), f"Python {platform.python_version()} · PySide6 {PySide6.__version__} · Qt {qVersion()}")
         self.data_path = str(data_dir())
         row(tr("데이터 폴더"), self.data_path)
+        # GitHub 저장소: 누르면 브라우저로 열림 (소스, 새 버전, 문제 신고)
+        repo = QLabel(f'<a href="{REPO_URL}" style="color:#ff7b7d;">{REPO_URL.removeprefix("https://")}</a>')
+        repo.setOpenExternalLinks(True)
+        repo.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        repo.setToolTip(REPO_URL)
+        k = QLabel(tr("저장소"))
+        k.setObjectName("Muted")
+        form.addRow(k, repo)
+        self.repo_link = repo
         lay.addLayout(form)
 
         for text, small in ((NOTICE, False), (LICENSES, True)):
@@ -116,10 +128,13 @@ class AboutDialog(QDialog):
         self.b_copy.clicked.connect(self._copy)
         b_open = make_button(tr("데이터 폴더 열기"), ghost=True)
         b_open.clicked.connect(lambda: reveal_in_explorer(self.data_path))
+        b_repo = make_button(tr("GitHub 저장소"), ghost=True, tooltip=REPO_URL)
+        b_repo.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(REPO_URL)))
         ok = make_button(tr("닫기"), primary=True)
         ok.clicked.connect(self.accept)
         btns.addWidget(self.b_copy)
         btns.addWidget(b_open)
+        btns.addWidget(b_repo)
         btns.addStretch(1)
         btns.addWidget(ok)
         lay.addLayout(btns)

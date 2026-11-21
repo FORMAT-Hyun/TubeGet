@@ -39,8 +39,6 @@ The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); TubeGet i
 |---|---|---|
 | `TubeGet-<version>-Setup-win64.exe` | Windows 10/11 | **Installer (recommended)**. Installs like any program; open it from the Start menu. |
 | `TubeGet-<version>-Portable-win64.zip` | Windows 10/11 | **Portable**. No installation: extract to a new folder and run `TubeGet.exe`. |
-| `TubeGet-<version>-Android-arm64.apk` | Android 7.0+ | **Phone app**. The right choice for almost every phone. |
-| `TubeGet-<version>-Android-armv7.apk` | Android 7.0+ | Only for very old 32-bit phones. |
 
 ### Windows
 
@@ -53,16 +51,7 @@ The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); TubeGet i
 
 ### Android (phone)
 
-A phone-friendly app that downloads on the phone itself; no PC needed.
-
-1. Download the APK on your phone, open it, and allow "Install unknown apps" for your browser or file manager when asked.
-2. In the YouTube app, tap **Share → TubeGet**, or copy a link and tap **[Paste link]**.
-3. On the video card, pick video/audio, quality (bitrate for audio), format, save location, subtitles/dubbing and tags, then tap **[Download]**. With **Instant download** on, it starts right away.
-
-- Files are saved to `Download/TubeGet` and show up in your gallery and music apps.
-- yt-dlp, Python and FFmpeg are included in the app. yt-dlp updates itself once a day.
-- Downloads keep going with the screen off; progress is shown in a notification.
-- To update, install the new APK over the old one (no need to uninstall).
+The phone app now lives in its own repository, **[TubeGet Mobile](https://github.com/FORMAT-Hyun/TubeGet-Mobile)**. Get the APK from [its Releases](https://github.com/FORMAT-Hyun/TubeGet-Mobile/releases/latest).
 
 ## Usage
 
@@ -97,7 +86,6 @@ With [Instant] on, steps 2 and 3 are skipped.
 main.py                    Entry point
 installer/TubeGet.iss      Installer script (Inno Setup)
 build_installer.bat        Builds the exe and the installer in one go
-android/                   Android app (Kotlin + Jetpack Compose) - on the `mobile` branch
 tubegetapp/
   config.py                Settings (JSON)
   i18n.py                  Translation: tr("Korean source") → current language
@@ -140,6 +128,5 @@ Text without a translation falls back to the Korean source. During development y
 
 TubeGet's code is released under the [MIT License](LICENSE). You are free to use, modify and share it.
 
-- Bundled or used tools (yt-dlp, FFmpeg, PySide6, youtubedl-android, etc.) keep their own licenses; see [NOTICE.md](NOTICE.md).
-- The Android APK includes youtubedl-android (GPL-3.0), so the distributed APK as a whole is subject to the GPL-3.0.
+- Tools TubeGet uses (yt-dlp, FFmpeg, PySide6, etc.) keep their own licenses; see [NOTICE.md](NOTICE.md).
 - Only download content you have the right to save. You are responsible for how you use TubeGet.

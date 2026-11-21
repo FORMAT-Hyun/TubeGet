@@ -7,8 +7,8 @@ STRINGS: dict[str, str] = {
     "{APP_NAME} 정보": "About {APP_NAME}",
     "yt-dlp 기반 유튜브 다운로더": "YouTube downloader powered by yt-dlp",
     "버전 {version_text}": "Version {version_text}",
-    "TubeGet은 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요.":
-        "TubeGet is a graphical front end for yt-dlp and FFmpeg.",
+    "TubeGet은 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요. MIT 라이선스로 공개돼 있어요.":
+        "TubeGet is a graphical front end for yt-dlp and FFmpeg, released under the MIT License.",
     "사용한 도구: yt-dlp(Unlicense), FFmpeg(LGPL/GPL), Qt for Python·PySide6(LGPL). 각 도구는 자기 라이선스를 따라요.":
         "Tools used: yt-dlp (Unlicense), FFmpeg (LGPL/GPL), Qt for Python / PySide6 (LGPL). Each tool follows its own license.",
     "JS 런타임": "JS runtime",
@@ -343,7 +343,6 @@ STRINGS: dict[str, str] = {
     "동시 다운로드 수": "Simultaneous downloads",
     "속도 제한": "Speed limit",
     "비워두면 제한 없음 (예: 5M, 800K)": "Leave empty for no limit (e.g. 5M, 800K)",
-    "음원 음질 (MP3/M4A/Opus)": "Audio quality (MP3/M4A/Opus)",
     "영상 파일에 제목·채널 등 메타데이터 넣기": "Embed metadata such as title and channel in video files",
     "음원에 태그 넣기": "Embed tags in audio files",
     "기본값이에요. 영상마다 [태그] 버튼으로 바꿀 수 있어요.": "This is the default. You can change it per video with the [Tags] button.",
@@ -464,4 +463,8 @@ STRINGS: dict[str, str] = {
     "유튜브 원래 값으로": "Reset to YouTube values",
     "자동 정리 값으로": "Reset to auto-cleaned values",
     "비워두면 넣지 않음": "Leave empty to skip",
+    "저장소": "Repository",
+    "GitHub 저장소": "GitHub",
+    "음질": "Bitrate",
+    "무손실·원본 형식은 음질을 고르지 않아요": "Lossless and original formats have no quality setting",
 }

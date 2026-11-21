@@ -9,7 +9,6 @@ from PySide6.QtWidgets import (QCheckBox, QComboBox, QDialog, QDialogButtonBox, 
                                QVBoxLayout, QWidget)
 
 from ..config import COOKIE_BROWSERS, FILENAME_PRESETS, Settings
-from ..core.options import AUDIO_QUALITIES
 from .widgets import make_button
 from ..i18n import AUTO, LANGUAGES, tr
 
@@ -95,11 +94,6 @@ class SettingsDialog(QDialog):
         self.rate = QLineEdit(settings.rate_limit)
         self.rate.setPlaceholderText(tr("비워두면 제한 없음 (예: 5M, 800K)"))
         f.addRow(tr("속도 제한"), self.rate)
-        self.audio_q = QComboBox()
-        for key, label in AUDIO_QUALITIES:
-            self.audio_q.addItem(label, key)
-        self.audio_q.setCurrentIndex(max(0, self.audio_q.findData(settings.audio_quality)))
-        f.addRow(tr("음원 음질 (MP3/M4A/Opus)"), self.audio_q)
         self.meta = QCheckBox(tr("영상 파일에 제목·채널 등 메타데이터 넣기"))
         self.meta.setChecked(settings.embed_metadata)
         f.addRow("", self.meta)
@@ -214,7 +208,6 @@ class SettingsDialog(QDialog):
         s.filename_template = tpl
         s.max_concurrent = self.concurrent.value()
         s.rate_limit = self.rate.text().strip()
-        s.audio_quality = self.audio_q.currentData()
         s.embed_metadata = self.meta.isChecked()
         s.audio_tags_default = self.audio_tags.isChecked()
         s.audio_tag_clean = self.audio_clean.isChecked()

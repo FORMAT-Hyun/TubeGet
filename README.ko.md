@@ -39,8 +39,6 @@
 |---|---|---|
 | `TubeGet-<버전>-Setup-win64.exe` | Windows 10/11 | **설치 버전 (추천)**. 일반 프로그램처럼 설치하고 시작 메뉴에서 켜요. |
 | `TubeGet-<버전>-Portable-win64.zip` | Windows 10/11 | **포터블**. 설치 없이 새 폴더에 압축을 풀고 `TubeGet.exe`를 실행해요. |
-| `TubeGet-<버전>-Android-arm64.apk` | 안드로이드 7.0 이상 | **휴대폰용**. 거의 모든 휴대폰은 이걸 받으면 돼요. |
-| `TubeGet-<버전>-Android-armv7.apk` | 안드로이드 7.0 이상 | 아주 오래된 32비트 휴대폰 전용이에요. |
 
 ### Windows
 
@@ -53,16 +51,7 @@
 
 ### 안드로이드 (휴대폰)
 
-휴대폰 화면에 맞춘 앱이에요. PC 없이 휴대폰에서 바로 받아요.
-
-1. 휴대폰에서 APK를 받아 열고, '출처를 알 수 없는 앱 설치'를 물으면 브라우저나 파일 앱에 허용해 주세요.
-2. 유튜브 앱에서 **공유 → TubeGet**을 누르거나, 링크를 복사한 뒤 **[링크 붙여넣기]**를 눌러요.
-3. 영상 카드에서 영상/오디오, 화질(오디오는 음질), 포맷, 저장 위치, 자막/더빙, 태그를 고르고 **[다운로드]**를 눌러요. **바로 받기**를 켜 두면 바로 시작해요.
-
-- 파일은 `Download/TubeGet`에 저장되고 갤러리와 음악 앱에서 바로 보여요.
-- yt-dlp, 파이썬, FFmpeg가 앱 안에 들어 있어요. yt-dlp는 하루에 한 번 스스로 업데이트해요.
-- 화면을 꺼도 계속 받고, 진행률은 알림에 보여요.
-- 새 버전 APK는 지우지 말고 그대로 덮어 설치하면 돼요.
+휴대폰 앱은 **[TubeGet Mobile](https://github.com/FORMAT-Hyun/TubeGet-Mobile)** 저장소로 분리됐어요. APK는 [그쪽 Releases](https://github.com/FORMAT-Hyun/TubeGet-Mobile/releases/latest)에서 받으세요.
 
 ## 사용법
 
@@ -97,7 +86,6 @@
 main.py                    진입점
 installer/TubeGet.iss      설치 마법사 스크립트 (Inno Setup)
 build_installer.bat        exe 빌드부터 설치 파일 생성까지 한 번에
-android/                   안드로이드 앱 (Kotlin + Jetpack Compose) - `mobile` 브랜치에 있어요
 tubegetapp/
   config.py                설정 (JSON)
   i18n.py                  다국어: tr("한국어 원문") → 현재 언어
@@ -140,6 +128,5 @@ yt-dlp를 라이브러리로 넣지 않고 **별도 실행 파일로 호출**해
 
 TubeGet 코드는 [MIT 라이선스](LICENSE)예요. 자유롭게 쓰고 고치고 나눌 수 있어요.
 
-- 함께 쓰는 도구(yt-dlp, FFmpeg, PySide6, youtubedl-android 등)는 각자의 라이선스를 따라요. 자세한 내용은 [NOTICE.md](NOTICE.md)에 있어요.
-- 안드로이드 APK에는 GPL-3.0인 youtubedl-android가 들어 있어서, 배포되는 APK 전체는 GPL-3.0 조건을 따라요.
+- 함께 쓰는 도구(yt-dlp, FFmpeg, PySide6 등)는 각자의 라이선스를 따라요. 자세한 내용은 [NOTICE.md](NOTICE.md)에 있어요.
 - 저작권이 있는 콘텐츠는 저장할 권리가 있을 때만 받아 주세요. 사용에 대한 책임은 사용자에게 있어요.
