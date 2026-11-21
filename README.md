@@ -56,6 +56,19 @@ The installer works on PCs without Python.
 
 Run `build_windows.bat` to create a portable `dist\TubeGet\TubeGet.exe` (the whole `dist\TubeGet` folder is needed).
 
+## Android (phone)
+
+From 0.1.5 there is also an Android app with a phone-friendly UI (Android 7.0 or later). It downloads on the phone itself; no PC needed.
+
+1. From [Releases](https://github.com/FORMAT-Hyun/TubeGet/releases), download `TubeGet-<version>-Android-arm64.apk` (almost every phone). Very old 32-bit phones need `-armv7.apk`.
+2. Open the file and allow "Install unknown apps" for your browser or file manager when asked.
+3. In the YouTube app, tap **Share → TubeGet**, or copy a link and tap **[Paste link]**. Pick video/audio, quality and format, then tap **[Download]**.
+
+- Files are saved to `Download/TubeGet` and show up in your gallery and music apps.
+- yt-dlp, Python and FFmpeg are included in the app. yt-dlp updates itself once a day (or from Settings).
+- Downloads keep going with the screen off; progress is shown in a notification.
+- The source is in the [`android/`](android) folder on the `mobile` branch. Build with `cd android` → `gradlew assembleRelease` (needs Android SDK 35 and JDK 17+).
+
 ## Usage
 
 1. Copy a YouTube link and click the red **[Paste link]** button at the top. Press Ctrl+L to type a link, or drag one onto the window.

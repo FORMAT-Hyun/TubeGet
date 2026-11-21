@@ -56,6 +56,19 @@ macOS와 Linux에서는 `./run.sh`로 실행해요. macOS는 ffmpeg를 `brew ins
 
 `build_windows.bat`을 실행하면 설치 없이 쓰는 `dist\TubeGet\TubeGet.exe`가 만들어져요 (`dist\TubeGet` 폴더 전체가 필요해요).
 
+## 안드로이드 (휴대폰)
+
+0.1.5부터 휴대폰 화면에 맞춘 안드로이드 앱도 있어요 (Android 7.0 이상). PC 없이 휴대폰에서 바로 받아요.
+
+1. [Releases](https://github.com/FORMAT-Hyun/TubeGet/releases)에서 `TubeGet-<버전>-Android-arm64.apk`를 받아요 (거의 모든 휴대폰). 아주 오래된 32비트 휴대폰은 `-armv7.apk`를 받으세요.
+2. 파일을 열고, '출처를 알 수 없는 앱 설치'를 물으면 브라우저나 파일 앱에 허용해 주세요.
+3. 유튜브 앱에서 **공유 → TubeGet**을 누르거나, 링크를 복사한 뒤 **[링크 붙여넣기]**를 눌러요. 영상/오디오, 화질, 포맷을 고르고 **[다운로드]**를 누르면 돼요.
+
+- 파일은 `Download/TubeGet`에 저장되고 갤러리와 음악 앱에서 바로 보여요.
+- yt-dlp, 파이썬, FFmpeg가 앱 안에 들어 있어요. yt-dlp는 하루에 한 번 스스로 업데이트해요 (설정에서 직접도 가능).
+- 화면을 꺼도 계속 받고, 진행률은 알림에 보여요.
+- 소스는 `mobile` 브랜치의 [`android/`](android) 폴더에 있어요. `cd android` → `gradlew assembleRelease`로 빌드해요 (Android SDK 35, JDK 17 이상 필요).
+
 ## 사용법
 
 1. 유튜브 주소를 복사하고 위쪽 빨간 **[링크 붙여넣기]** 버튼을 눌러요. 주소를 직접 입력하려면 Ctrl+L, 창에 끌어다 놓아도 돼요.

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tab_home">받기</string>
+    <string name="tab_history">기록</string>
+    <string name="settings">설정</string>
+    <string name="back">뒤로</string>
+
+    <string name="paste_link">링크 붙여넣기</string>
+    <string name="link_hint">또는 유튜브 링크 직접 입력</string>
+    <string name="load">불러오기</string>
+    <string name="clear">지우기</string>
+    <string name="loading">불러오는 중…</string>
+    <string name="load_failed">링크를 불러오지 못했어요</string>
+    <string name="retry">다시 시도</string>
+    <string name="close">닫기</string>
+    <string name="cancel">취소</string>
+    <string name="remove">지우기</string>
+    <string name="no_link_found">링크가 없어요. 유튜브 링크를 먼저 복사해 주세요.</string>
+
+    <string name="empty_title">유튜브 영상과 음원을 받아요</string>
+    <string name="empty_body">유튜브 앱에서 [공유 → TubeGet]을 누르거나, 링크를 복사한 뒤 [링크 붙여넣기]를 누르세요.</string>
+
+    <string name="engine_starting">다운로드 도구를 준비하는 중… (처음 한 번은 몇 초 걸려요)</string>
+    <string name="engine_failed">다운로드 도구를 시작하지 못했어요. 앱을 다시 설치한 뒤 시도해 주세요.</string>
+
+    <string name="video">영상</string>
+    <string name="audio">오디오</string>
+    <string name="quality">화질</string>
+    <string name="format">포맷</string>
+    <string name="best">최고 화질</string>
+    <string name="download">다운로드</string>
+    <string name="download_n">%d개 다운로드</string>
+    <string name="playlist_count">영상 %d개</string>
+    <string name="selected_n">%2$d개 중 %1$d개 선택</string>
+    <string name="select_all">모두 선택</string>
+    <string name="select_none">선택 해제</string>
+    <string name="added_one">다운로드 목록에 넣었어요</string>
+    <string name="added_many">영상 %d개를 다운로드 목록에 넣었어요</string>
+
+    <string name="queue_title">다운로드 목록 (%d)</string>
+    <string name="status_waiting">대기 중</string>
+    <string name="status_starting">시작하는 중…</string>
+    <string name="status_converting">변환하는 중…</string>
+    <string name="status_canceled">취소됨</string>
+    <string name="status_done">완료 · 누르면 열어요</string>
+    <string name="eta_left">%s 남음</string>
+    <string name="summary_video">영상 · %1$s · %2$s</string>
+    <string name="summary_audio">오디오 · %s</string>
+    <string name="summary_subs">자막 %s</string>
+    <string name="error_detail">다운로드 실패</string>
+    <string name="copy_log">로그 복사</string>
+    <string name="copied">복사했어요</string>
+
+    <string name="history_empty">다 받은 파일이 여기에 보여요.</string>
+    <string name="history_count">받은 파일 (%d)</string>
+    <string name="clear_history">기록 비우기</string>
+    <string name="clear_history_confirm">기록을 비울까요? 받은 파일은 지워지지 않아요.</string>
+    <string name="saved_in">%s에 저장돼요</string>
+    <string name="share">공유</string>
+    <string name="redownload">다시 받기</string>
+    <string name="remove_from_list">목록에서 지우기</string>
+    <string name="delete_file">파일 삭제</string>
+    <string name="delete_file_confirm">\"%s\" 파일을 휴대폰에서 지울까요? 되돌릴 수 없어요.</string>
+    <string name="file_missing">파일이 옮겨졌거나 지워졌어요</string>
+    <string name="no_app_to_open">이 파일을 열 수 있는 앱이 없어요</string>
+
+    <string name="settings_language">언어 / Language</string>
+    <string name="lang_auto">자동</string>
+    <string name="settings_download">다운로드</string>
+    <string name="concurrent">동시 다운로드</string>
+    <string name="compat_h264">휴대폰 호환 영상 (H.264)</string>
+    <string name="compat_h264_desc">어느 갤러리·플레이어에서도 잘 열리는 코덱을 우선해요. 끄면 용량이 더 작은 코덱을 받아요.</string>
+    <string name="embed_meta">썸네일·태그 넣기</string>
+    <string name="embed_meta_desc">파일에 표지, 제목, 아티스트를 넣어요</string>
+    <string name="playlist_folder">재생목록은 폴더로 묶기</string>
+    <string name="subtitles">자막</string>
+    <string name="subtitles_desc">영상에는 넣고, 오디오는 .srt 파일로 저장해요</string>
+    <string name="sub_langs">자막 언어 (쉼표로 구분, 예: ko,en)</string>
+    <string name="ytdlp_version">yt-dlp 버전: %s</string>
+    <string name="auto_update">하루에 한 번 업데이트 확인</string>
+    <string name="update_now">yt-dlp 업데이트</string>
+    <string name="updating">업데이트 중…</string>
+    <string name="update_done">yt-dlp를 업데이트했어요</string>
+    <string name="update_latest">yt-dlp가 이미 최신이에요</string>
+    <string name="update_failed">업데이트하지 못했어요. 인터넷 연결을 확인해 주세요.</string>
+    <string name="update_hint">갑자기 안 받아지면 유튜브가 바뀐 경우가 많아요. yt-dlp를 업데이트하면 대부분 해결돼요.</string>
+    <string name="about">앱 정보</string>
+    <string name="app_version">TubeGet %s (베타)</string>
+    <string name="licenses">yt-dlp (Unlicense), FFmpeg (LGPL/GPL), Python (PSF), youtubedl-android (GPL-3.0)를 사용해요. 저장할 권리가 있는 콘텐츠만 받아 주세요.</string>
+
+    <string name="ch_progress">다운로드 진행</string>
+    <string name="ch_done">다운로드 완료</string>
+    <string name="notif_active_count">%d개 받는 중</string>
+    <string name="notif_done">다운로드 완료</string>
+    <string name="notif_failed">다운로드 실패: %s</string>
+
+    <string name="err_bot">유튜브가 봇 확인을 요구해요. VPN(Cloudflare WARP 등)을 켜 두었다면 끄고 다시 시도하거나, 와이파이와 모바일 데이터를 바꿔 보세요.</string>
+    <string name="err_age">연령 제한 영상이라 로그인 없이는 받을 수 없어요.</string>
+    <string name="err_private">비공개 영상이라 받을 수 없어요.</string>
+    <string name="err_members">채널 멤버십 전용 영상이에요.</string>
+    <string name="err_premiere">아직 시작하지 않은 최초 공개/라이브 영상이에요.</string>
+    <string name="err_live">진행 중인 라이브 방송은 지원하지 않아요. 방송이 끝난 뒤 다시 시도해 주세요.</string>
+    <string name="err_drm">DRM으로 보호된 영상이라 받을 수 없어요.</string>
+    <string name="err_geo">이 지역에서 볼 수 없는 영상이에요.</string>
+    <string name="err_unavailable">삭제되었거나 볼 수 없는 영상이에요.</string>
+    <string name="err_format">선택한 화질/포맷이 이 영상에 없어요. \'최고 화질\'로 바꿔서 다시 시도해 보세요.</string>
+    <string name="err_403">유튜브가 접근을 막았어요(403). 설정에서 yt-dlp를 업데이트한 뒤 다시 시도해 보세요.</string>
+    <string name="err_429">요청이 너무 많아 잠시 차단됐어요(429). 잠시 후 다시 시도하거나 동시 다운로드 수를 줄여 주세요.</string>
+    <string name="err_404">영상을 찾을 수 없어요(404). 주소를 다시 확인해 주세요.</string>
+    <string name="err_unsupported">지원하지 않는 주소예요. 주소를 다시 확인해 주세요.</string>
+    <string name="err_network">인터넷 연결을 확인해 주세요. 연결이 정상이라면 잠시 후 다시 시도해 보세요.</string>
+    <string name="err_space">저장 공간이 부족해요.</string>
+    <string name="err_permission">다운로드 폴더에 쓰지 못했어요. TubeGet의 저장공간 권한을 허용한 뒤 다시 시도해 주세요.</string>
+    <string name="err_name_long">파일 이름이 너무 길어요.</string>
+    <string name="err_generic">다운로드에 실패했어요: %s</string>
+    <string name="err_unknown">알 수 없는 오류로 실패했어요. 설정에서 yt-dlp를 업데이트한 뒤 다시 시도해 보세요.</string>
+</resources>
