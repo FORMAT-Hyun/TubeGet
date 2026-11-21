@@ -118,6 +118,10 @@ class DownloadOptions:
             text = f"영상 · {q} · {self.container.upper()}"
             if self.compat_h264:
                 text += " · H.264"
+            if not self.embed_metadata:
+                text += " · 태그 끔"
+            elif self.tag_values:
+                text += " · 태그 편집"
             if self.has_dub:
                 text += f" · 더빙 {self.dub_lang}"
             if self.has_subs:
@@ -199,6 +203,10 @@ def build_args(opts: DownloadOptions, url: str, deps: Optional[Deps] = None) -> 
 
     if opts.mode != "audio" and opts.embed_metadata:
         args += ["--embed-metadata"]
+        if opts.tag_values:
+            args += tags.custom_args(opts.tag_values)
+        elif opts.tag_smart:
+            args += tags.smart_args()
     if opts.overwrite:
         args += ["--force-overwrites"]
 

@@ -64,6 +64,7 @@ class MainWindow(QMainWindow):
         self.sub_auto = False
         self.dub_lang = ""                 # 지금 영상에서 고른 더빙(음성 언어)
         self.tag_state = TagState()           # 음원 태그 (영상마다)
+        self.vtag_state = TagState()          # 영상(MP4 등) 태그 (영상마다)
         self._auto_pending = False            # '바로 받기'로 불러온 링크인지
         self._panel_open = False              # 정보 패널이 열려 있는지
         self._loading_ui = False
@@ -458,9 +459,8 @@ class MainWindow(QMainWindow):
         # 음원은 화질이 없어서 숨김 (음질은 설정 창에서)
         for w in (self.quality, self.l_quality):
             w.setVisible(video)
-        # 태그는 음원일 때만
         for w in (self.b_tags, self.l_tags):
-            w.setVisible(not video)
+            w.setVisible(True)
         self._update_tags_button()
         self._update_subs_button()
         self._update_estimate()
@@ -774,6 +774,7 @@ class MainWindow(QMainWindow):
             self.dub_lang = ""
         self.tag_state = TagState.for_info(info, self.settings.audio_tags_default,
                                            self.settings.embed_thumbnail, self.settings.audio_tag_clean)
+        self.vtag_state = TagState(self.settings.embed_metadata, self.settings.embed_thumbnail, None, False)
         self._update_tags_button()
         self._update_subs_button()
         if info is None:
@@ -872,6 +873,7 @@ class MainWindow(QMainWindow):
 
     def _current_options(self) -> Optional[DownloadOptions]:
         s = self.settings
+        ts = self._cur_tags()
         out_dir = self._ensure_dir()
         if not Path(out_dir).is_dir():
             QMessageBox.warning(self, "저장 위치", f"저장 폴더를 만들 수 없어요:\n{out_dir}")
@@ -888,11 +890,11 @@ class MainWindow(QMainWindow):
             dub_lang=self.dub_lang,
             sub_mode=s.sub_mode,
             overwrite=s.overwrite_existing,
-            embed_thumbnail=self.tag_state.cover if self.mode.value() == "audio" else True,
-            audio_tags=self.tag_state.on,
-            tag_values=dict(self.tag_state.values) if self.tag_state.values else None,
-            tag_smart=self.tag_state.smart,
-            embed_metadata=s.embed_metadata,
+            embed_thumbnail=ts.cover,
+            audio_tags=ts.on,
+            tag_values=dict(ts.values) if ts.values else None,
+            tag_smart=ts.smart,
+            embed_metadata=ts.on if self.mode.value() == "video" else s.embed_metadata,
             output_dir=out_dir,
             filename_template=s.filename_template,
             cookies_browser=s.cookies_browser,
@@ -1093,13 +1095,20 @@ class MainWindow(QMainWindow):
                 self.settings.save()
             self._update_subs_button()
 
+    def _cur_tags(self) -> TagState:
+        return self.tag_state if self.mode.value() == "audio" else self.vtag_state
+
     def _choose_tags(self) -> None:
-        dlg = TagDialog(self.info, self.tag_state, self)
+        audio = self.mode.value() == "audio"
+        dlg = TagDialog(self.info, self._cur_tags(), self, audio=audio)
         accepted = dlg.exec()
         result = dlg.result_state()
         dlg.deleteLater()
         if accepted:
-            self.tag_state = result
+            if audio:
+                self.tag_state = result
+            else:
+                self.vtag_state = result
             self._update_tags_button()
 
     @staticmethod
@@ -1107,12 +1116,13 @@ class MainWindow(QMainWindow):
         return text if len(text) <= n else text[:n - 1] + "…"
 
     def _update_tags_button(self) -> None:
-        text = self.tag_state.button_text()
+        ts = self._cur_tags()
+        text = ts.button_text()
         if text.startswith("태그: "):
             text = text[4:]
         self.b_tags.setText(self._clip(text, 9))
-        if self.tag_state.on and self.tag_state.values:
-            v = self.tag_state.values
+        if ts.on and ts.values:
+            v = ts.values
             self.b_tags.setToolTip("\n".join(f"{k}: {v.get(f, '')}" for f, k in
                                              (("title", "제목"), ("artist", "아티스트"), ("album", "앨범"), ("year", "연도"))))
         else:

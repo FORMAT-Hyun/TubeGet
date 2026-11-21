@@ -121,7 +121,7 @@ w.dub_lang = ""; w._update_subs_button()
 shot("u03_audio")
 w.mode.setValue("video")
 w._on_mode_changed("video")
-check(not w.b_tags.isVisible() and w.b_subs.isVisible(), "영상 모드: 태그 숨김, 자막 보임")
+check(w.b_tags.isVisible() and w.b_subs.isVisible(), "영상 모드: 태그·자막 칩 모두 보임")
 check(w.quality.isVisible(), "영상으로 돌아오면 화질 칩 보임")
 
 # --- 바로 받기 -----------------------------------------------------------------

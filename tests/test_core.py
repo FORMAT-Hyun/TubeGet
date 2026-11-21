@@ -266,3 +266,11 @@ def test_dub_args_and_parse():
         {"format_id": "2", "vcodec": "none", "acodec": "aac", "language": "ko", "format_note": "Korean - dubbed-auto"},
         {"format_id": "3", "vcodec": "none", "acodec": "aac"}]})
     assert info.dubs == {"en": "original", "ko": "dubbed"} and info.dub_original == "en"
+
+
+def test_video_tag_args():
+    a = build_args(DownloadOptions(tag_values={"title": "곡", "artist": "A", "album": "", "year": "2020"}), "u")
+    assert "--embed-metadata" in a and a.count("--parse-metadata") == 4
+    off = build_args(DownloadOptions(embed_metadata=False), "u")
+    assert "--embed-metadata" not in off and "--parse-metadata" not in off
+    assert "태그 끔" in DownloadOptions(embed_metadata=False).summary()
