@@ -137,7 +137,7 @@ def wait_playlist(n=[0]):
         if j.state != "done":
             errors.append(f"playlist job failed: {j.error}")
     shot("07_playlist_done")
-    w.tabs.setCurrentIndex(1)
+    w._set_filter("history")
     QTimer.singleShot(200, lambda: (shot("08_history"), settings_shot()))
 
 
@@ -156,7 +156,7 @@ def deps_shot():
 
 
 def finish():
-    w.tabs.setCurrentIndex(0)
+    w._set_filter("all")
     w.url_edit.setText("not a url")
     w.fetch()
     print("bad url notice:", w.v_notice.text())

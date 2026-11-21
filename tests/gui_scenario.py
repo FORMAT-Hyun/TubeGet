@@ -181,21 +181,22 @@ def step_remove():
     job3 = results["job3"]
     parts = [p.name for p in out.iterdir() if ".part" in p.name or ".f1" in p.name]
     check(job3.state == "canceled" and parts, f"취소 후 임시 파일 남아 있음 {parts}")
-    w._item_widgets[job3.id].btn_remove.click()
+    item3 = w._item_widgets[job3.id]
+    item3.removeRequested.emit(item3.job)
     QTimer.singleShot(300, step_after_remove)
 
 
 def step_after_remove():
     left = [p.name for p in out.iterdir() if ".part" in p.name or ".ytdl" in p.name or ".f1" in p.name]
     check(not left, f"목록에서 지우면 임시 파일 삭제 (남은 것: {left})")
+    results["list_h"] = w.stack.height()
     w._set_collapsed(True)
     QTimer.singleShot(300, step_collapsed)
 
 
 def step_collapsed():
     check(not w.options_box.isVisible(), "옵션 접기")
-    top, bottom = w.splitter.sizes()
-    check(bottom > top, f"접으면 다운로드 목록이 더 넓어짐 (위 {top} / 아래 {bottom})")
+    check(w.stack.height() > results["list_h"], f"접으면 다운로드 목록이 더 넓어짐 ({results['list_h']} → {w.stack.height()})")
     shot("s05_collapsed")
     step_persist()
 

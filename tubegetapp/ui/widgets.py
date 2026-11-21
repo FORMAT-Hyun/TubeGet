@@ -3,13 +3,16 @@ from __future__ import annotations
 
 from typing import Callable, Optional
 
-from PySide6.QtCore import QObject, QSize, Qt, QUrl, Signal
-from PySide6.QtGui import QPainter, QPainterPath, QPixmap
+from PySide6.QtCore import QEvent, QObject, QRectF, QSize, Qt, QUrl, QVariantAnimation, Signal
+from PySide6.QtGui import QColor, QFontMetrics, QPainter, QPainterPath, QPixmap
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
-from PySide6.QtWidgets import (QButtonGroup, QDialog, QDialogButtonBox, QHBoxLayout, QLabel,
-                               QPlainTextEdit, QPushButton, QSizePolicy, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractButton, QButtonGroup, QComboBox, QDialog, QDialogButtonBox,
+                               QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QSizePolicy,
+                               QVBoxLayout, QWidget)
 
 from .. import APP_NAME, APP_VERSION
+from . import icons
+from .theme import GREEN, MUTED, SURFACE2, TEXT
 
 
 class ElidedLabel(QLabel):
@@ -145,6 +148,235 @@ class SegmentedToggle(QWidget):
         b = self._buttons.get(key)
         if b:
             b.setChecked(True)
+
+
+SHORT_ROLE = Qt.ItemDataRole.UserRole + 11
+
+
+def _paint_chip(w: QWidget, text: str, hover: bool, bold_font) -> None:
+    """칩(납작한 드롭다운) 모양 그리기: 글자 + 바로 옆 ▾, 마우스를 올리면 연한 회색 배경."""
+    p = QPainter(w)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    r = w.rect()
+    if w.isEnabled() and hover:
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(SURFACE2))
+        p.drawRoundedRect(QRectF(r).adjusted(0.5, 2.5, -0.5, -2.5), 6, 6)
+    p.setFont(bold_font)
+    p.setPen(QColor(TEXT if w.isEnabled() else "#a4abb3"))
+    fm = QFontMetrics(bold_font)
+    text = fm.elidedText(text, Qt.TextElideMode.ElideRight, r.width() - 8 - 2 - 16 - 6)
+    p.drawText(r.adjusted(8, 0, 0, 0), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
+    pm = icons.pixmap("chevron_down", MUTED if w.isEnabled() else "#b6bcc3", 16)
+    p.drawPixmap(8 + fm.horizontalAdvance(text) + 2, (r.height() - 16) // 2, pm)
+
+
+class ChipCombo(QComboBox):
+    """툴바용 납작한 드롭다운. 칩에는 짧은 값만 굵게 보이고, 펼친 목록에는 긴 설명이 보여요."""
+
+    HEIGHT = 32
+
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self.setObjectName("Chip")
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        self._hover = False
+        self._open = False
+        m = self.model()
+        for sig in (m.rowsInserted, m.rowsRemoved, m.modelReset, m.dataChanged):
+            sig.connect(lambda *_: self.updateGeometry())
+        self.currentIndexChanged.connect(lambda *_: (self.updateGeometry(), self.update()))
+
+    def event(self, e) -> bool:  # noqa: N802
+        r = super().event(e)
+        if e.type() in (QEvent.Type.Polish, QEvent.Type.FontChange, QEvent.Type.StyleChange):
+            self.updateGeometry()
+        return r
+
+    def addChip(self, long_text: str, data=None, short: Optional[str] = None) -> None:  # noqa: N802
+        self.addItem(long_text, data)
+        if short:
+            self.setItemData(self.count() - 1, short, SHORT_ROLE)
+
+    def _short(self, i: int) -> str:
+        if i < 0:
+            return ""
+        return self.itemData(i, SHORT_ROLE) or self.itemText(i)
+
+    def _bold_font(self):
+        f = self.font()
+        f.setBold(True)
+        return f
+
+    def sizeHint(self) -> QSize:  # noqa: N802
+        self.ensurePolished()      # 스타일시트의 글꼴(10pt)이 적용된 뒤에 폭을 잰다
+        fm = QFontMetrics(self._bold_font())
+        return QSize(fm.horizontalAdvance(self._short(self.currentIndex())) + 8 + 2 + 16 + 8, self.HEIGHT)
+
+    def minimumSizeHint(self) -> QSize:  # noqa: N802
+        return self.sizeHint()
+
+    def enterEvent(self, event) -> None:  # noqa: N802
+        self._hover = True
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:  # noqa: N802
+        self._hover = False
+        self.update()
+        super().leaveEvent(event)
+
+    def showPopup(self) -> None:  # noqa: N802
+        view = self.view()
+        view.setMinimumWidth(max(self.width(), view.sizeHintForColumn(0) + 36))
+        self._open = True
+        self.update()
+        super().showPopup()
+
+    def hidePopup(self) -> None:  # noqa: N802
+        super().hidePopup()
+        self._open = False
+        self.update()
+
+    def paintEvent(self, _event) -> None:  # noqa: N802
+        _paint_chip(self, self._short(self.currentIndex()), self._hover or self._open or self.hasFocus(),
+                    self._bold_font())
+
+
+class ChipButton(QAbstractButton):
+    """칩 모양의 버튼 (클릭하면 메뉴를 띄우는 용도). 글자 + ▾."""
+
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.setAttribute(Qt.WidgetAttribute.WA_Hover, True)
+        self._hover = False
+
+    def _bold_font(self):
+        f = self.font()
+        f.setBold(True)
+        return f
+
+    def event(self, e) -> bool:  # noqa: N802
+        r = super().event(e)
+        if e.type() in (QEvent.Type.Polish, QEvent.Type.FontChange, QEvent.Type.StyleChange):
+            self.updateGeometry()
+        return r
+
+    def setText(self, text: str) -> None:  # noqa: N802
+        super().setText(text)
+        self.updateGeometry()
+        self.update()
+
+    def sizeHint(self) -> QSize:  # noqa: N802
+        self.ensurePolished()
+        fm = QFontMetrics(self._bold_font())
+        return QSize(fm.horizontalAdvance(self.text()) + 8 + 2 + 16 + 8, ChipCombo.HEIGHT)
+
+    def minimumSizeHint(self) -> QSize:  # noqa: N802
+        return self.sizeHint()
+
+    def enterEvent(self, event) -> None:  # noqa: N802
+        self._hover = True
+        self.update()
+        super().enterEvent(event)
+
+    def leaveEvent(self, event) -> None:  # noqa: N802
+        self._hover = False
+        self.update()
+        super().leaveEvent(event)
+
+    def paintEvent(self, _event) -> None:  # noqa: N802
+        _paint_chip(self, self.text(), self._hover or self.hasFocus(), self._bold_font())
+
+
+class ModeCombo(ChipCombo):
+    """[영상 | 오디오] 고르기. SegmentedToggle 과 같은 사용법(value/setValue/changed)."""
+    changed = Signal(str)
+
+    def __init__(self, options: list[tuple[str, str]], parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        for key, label in options:
+            self.addChip(label, key)
+        self.activated.connect(lambda i: self.changed.emit(self.itemData(i)))
+
+    def value(self) -> str:
+        return self.currentData() or self.itemData(0)
+
+    def setValue(self, key: str) -> None:  # noqa: N802
+        i = self.findData(key)
+        if i >= 0:
+            self.setCurrentIndex(i)
+
+
+class ToggleSwitch(QAbstractButton):
+    """둥근 켜기/끄기 스위치."""
+
+    def __init__(self, parent: Optional[QWidget] = None):
+        super().__init__(parent)
+        self.setCheckable(True)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFixedSize(42, 24)
+        self._pos = 0.0
+        self._anim = QVariantAnimation(self)
+        self._anim.setDuration(140)
+        self._anim.valueChanged.connect(self._on_anim)
+        self.toggled.connect(self._animate)
+
+    def _on_anim(self, v) -> None:
+        self._pos = float(v)
+        self.update()
+
+    def _animate(self, on: bool) -> None:
+        self._anim.stop()
+        self._anim.setStartValue(self._pos)
+        self._anim.setEndValue(1.0 if on else 0.0)
+        self._anim.start()
+
+    def setCheckedSilently(self, on: bool) -> None:  # noqa: N802
+        self.blockSignals(True)
+        self.setChecked(on)
+        self.blockSignals(False)
+        self._anim.stop()
+        self._pos = 1.0 if on else 0.0
+        self.update()
+
+    def paintEvent(self, _event) -> None:  # noqa: N802
+        p = QPainter(self)
+        p.setRenderHint(QPainter.RenderHint.Antialiasing)
+        off, on = QColor("#c3c9d0"), QColor(GREEN)
+        t = self._pos
+        track = QColor(int(off.red() + (on.red() - off.red()) * t),
+                       int(off.green() + (on.green() - off.green()) * t),
+                       int(off.blue() + (on.blue() - off.blue()) * t))
+        if not self.isEnabled():
+            p.setOpacity(0.5)
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(track)
+        p.drawRoundedRect(QRectF(1, 2, self.width() - 2, self.height() - 4), 10, 10)
+        d = 16
+        x = 4 + t * (self.width() - 8 - d)
+        p.setBrush(QColor(0, 0, 0, 40))
+        p.drawEllipse(QRectF(x, 4.6, d, d))
+        p.setBrush(QColor("white"))
+        p.drawEllipse(QRectF(x, 4, d, d))
+
+
+def icon_button(name: str, tooltip: str = "", *, color: str = "#5f6670", size: int = 20,
+                box: int = 32) -> QPushButton:
+    """아이콘만 있는 납작한 버튼."""
+    b = QPushButton()
+    b.setProperty("iconbtn", True)
+    b.setIcon(icons.icon(name, color, size))
+    b.setIconSize(QSize(size, size))
+    b.setFixedSize(box, box)
+    b.setCursor(Qt.CursorShape.PointingHandCursor)
+    if tooltip:
+        b.setToolTip(tooltip)
+    return b
 
 
 def make_button(text: str, *, primary: bool = False, ghost: bool = False, link: bool = False,

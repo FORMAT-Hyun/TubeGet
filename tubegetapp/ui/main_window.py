@@ -6,12 +6,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
 
-from PySide6.QtCore import QEvent, QSize, Qt, QTimer
-from PySide6.QtGui import QAction, QGuiApplication, QKeySequence, QShortcut
-from PySide6.QtWidgets import (QApplication, QCheckBox, QComboBox, QFileDialog, QFrame, QGridLayout,
-                               QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMenu, QMessageBox,
-                               QProgressBar, QPushButton, QScrollArea, QSizePolicy, QSplitter, QSystemTrayIcon,
-                               QTabWidget, QVBoxLayout, QWidget)
+from PySide6.QtCore import QEvent, QPoint, QSize, Qt, QTimer
+from PySide6.QtGui import QAction, QFontMetrics, QGuiApplication, QKeySequence, QShortcut
+from PySide6.QtWidgets import (QApplication, QButtonGroup, QCheckBox, QFileDialog, QFrame, QHBoxLayout,
+                               QLabel, QLineEdit, QMainWindow, QMenu, QMessageBox, QProgressBar,
+                               QPushButton, QScrollArea, QSizePolicy, QStackedWidget, QSystemTrayIcon,
+                               QVBoxLayout, QWidget)
 
 from .. import APP_NAME, APP_VERSION
 from ..config import Settings
@@ -34,11 +34,13 @@ from .queue_item import QueueItemWidget
 from .settings_dialog import SettingsDialog
 from .subtitle_dialog import SubtitleDialog, default_selection, summarize
 from .tag_dialog import TagDialog, TagState
-from .theme import app_icon, make_icon_pixmap, repolish
-from .widgets import (ElidedLabel, SegmentedToggle, ThumbLoader, field_label, make_button,
-                      rounded, show_log_dialog)
+from . import icons
+from .theme import DANGER, MUTED, WARNING, app_icon, repolish
+from .toast import ToastManager
+from .widgets import (ChipButton, ChipCombo, ElidedLabel, ModeCombo, ThumbLoader, ToggleSwitch, field_label,
+                      icon_button, make_button, rounded, show_log_dialog)
 
-THUMB_SIZE = QSize(208, 117)
+THUMB_SIZE = QSize(160, 90)
 _CHANNEL_RE = re.compile(r"youtube\.com/(?:@[^/?#]+|channel/[^/?#]+|c/[^/?#]+|user/[^/?#]+)/?(?:[?#].*)?$",
                          re.IGNORECASE)
 
@@ -61,6 +63,9 @@ class MainWindow(QMainWindow):
         self.sub_langs: list[str] = []     # 지금 영상에서 고른 자막
         self.sub_auto = False
         self.tag_state = TagState()           # 음원 태그 (영상마다)
+        self._auto_pending = False            # '바로 받기'로 불러온 링크인지
+        self._panel_open = False              # 정보 패널이 열려 있는지
+        self._loading_ui = False
 
         self.thumbs = ThumbLoader(self)
         self.fetcher = InfoFetcher(self)
@@ -84,8 +89,8 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle(APP_NAME)
         self.setWindowIcon(app_icon())
-        self.resize(960, 920)
-        self.setMinimumSize(780, 680)
+        self.resize(1000, 820)
+        self.setMinimumSize(900, 600)
         self.setAcceptDrops(True)
 
         self._build_ui()
@@ -106,62 +111,129 @@ class MainWindow(QMainWindow):
         central.setObjectName("Central")
         self.setCentralWidget(central)
         root = QVBoxLayout(central)
-        root.setContentsMargins(18, 14, 18, 10)
-        root.setSpacing(12)
+        root.setContentsMargins(0, 0, 0, 0)
+        root.setSpacing(0)
 
-        # 머리글 ------------------------------------------------------
-        head = QHBoxLayout()
-        logo = QLabel()
-        logo.setPixmap(make_icon_pixmap(64).scaled(28, 28, Qt.AspectRatioMode.KeepAspectRatio,
-                                                   Qt.TransformationMode.SmoothTransformation))
-        title = QLabel(APP_NAME)
-        title.setObjectName("AppTitle")
-        ver = QLabel(f"v{APP_VERSION} · yt-dlp GUI")
-        ver.setObjectName("AppVersion")
-        head.addWidget(logo)
-        head.addSpacing(4)
-        head.addWidget(title)
-        head.addSpacing(6)
-        head.addWidget(ver, 0, Qt.AlignmentFlag.AlignBottom)
-        head.addStretch(1)
-        self.b_tools = make_button("도구 상태", ghost=True)
-        self.b_settings = make_button("설정", ghost=True)
-        self.b_tools.clicked.connect(lambda: self._open_deps_dialog())
+        # ---- 상단 툴바 ---------------------------------------------------
+        bar = QFrame()
+        bar.setObjectName("Toolbar")
+        bl = QHBoxLayout(bar)
+        bl.setContentsMargins(16, 12, 14, 12)
+        bl.setSpacing(4)
+
+        self.b_paste = QPushButton("  링크 붙여넣기")
+        self.b_paste.setProperty("primary", True)
+        self.b_paste.setIcon(icons.icon("link_play", "#ffffff", 22))
+        self.b_paste.setIconSize(QSize(22, 22))
+        self.b_paste.setMinimumHeight(40)
+        self.b_paste.setMinimumWidth(158)
+        self.b_paste.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.b_paste.setToolTip("복사해 둔 주소를 붙여넣고 영상 정보를 불러와요 (Ctrl+L: 직접 입력)")
+        self.b_paste.clicked.connect(self._paste)
+        bl.addWidget(self.b_paste)
+        bl.addSpacing(10)
+
+        self.auto_toggle = ToggleSwitch()
+        self.auto_toggle.setToolTip("바로 받기\n켜면 링크를 붙여넣자마자 지금 고른 설정으로 바로 다운로드해요.\n"
+                                    "(재생목록은 고르는 창이 떠요)")
+        self.auto_toggle.toggled.connect(self._on_auto_toggled)
+        bl.addWidget(self.auto_toggle)
+        self.l_auto = QLabel("바로 받기")
+        self.l_auto.setObjectName("ChipLabel")
+        bl.addWidget(self.l_auto)
+        bl.addSpacing(12)
+
+        def chip_label(text: str) -> QLabel:
+            lbl = QLabel(text)
+            lbl.setObjectName("ChipLabel")
+            return lbl
+
+        self.mode = ModeCombo([("video", "영상"), ("audio", "오디오")])
+        self.mode.changed.connect(self._on_mode_changed)
+        self.quality = ChipCombo()
+        self.quality.currentIndexChanged.connect(self._on_option_changed)
+        self.fmt = ChipCombo()
+        self.fmt.currentIndexChanged.connect(self._on_option_changed)
+        self.l_quality = chip_label("화질")
+        self.l_fmt = chip_label("포맷")
+        bl.addWidget(chip_label("다운로드"))
+        bl.addWidget(self.mode)
+        bl.addSpacing(8)
+        bl.addWidget(self.l_quality)
+        bl.addWidget(self.quality)
+        bl.addSpacing(8)
+        bl.addWidget(self.l_fmt)
+        bl.addWidget(self.fmt)
+        bl.addSpacing(8)
+        bl.addWidget(chip_label("저장 위치"))
+        self.dest_btn = ChipButton()
+        self.dest_btn.clicked.connect(self._dest_menu)
+        bl.addWidget(self.dest_btn)
+        bl.addStretch(1)
+
+        self.b_settings = icon_button("gear", "설정", size=22, box=36)
         self.b_settings.clicked.connect(self._open_settings)
-        head.addWidget(self.b_tools)
-        head.addWidget(self.b_settings)
-        root.addLayout(head)
+        self.b_tools = icon_button("info", "도구 상태", size=22, box=36)
+        self.b_tools.clicked.connect(lambda: self._open_deps_dialog())
+        bl.addWidget(self.b_settings)
+        bl.addWidget(self.b_tools)
+        root.addWidget(bar)
 
-        # 주소 입력 ----------------------------------------------------
+        self.fetch_bar = QProgressBar()
+        self.fetch_bar.setRange(0, 0)
+        self.fetch_bar.setTextVisible(False)
+        self.fetch_bar.setStyleSheet("QProgressBar { border-radius: 0px; max-height: 3px; min-height: 3px; }"
+                                     "QProgressBar::chunk { border-radius: 0px; }")
+        self.fetch_bar.setVisible(False)
+        root.addWidget(self.fetch_bar)
+
+        body = QWidget()
+        bd = QVBoxLayout(body)
+        bd.setContentsMargins(20, 14, 20, 8)
+        bd.setSpacing(10)
+        root.addWidget(body, 1)
+
+        # ---- 정보 패널 (링크를 불러오면 나타남) ---------------------------------
+        self.panel = QFrame()
+        self.panel.setObjectName("InfoPanel")
+        pl = QVBoxLayout(self.panel)
+        pl.setContentsMargins(14, 12, 14, 12)
+        pl.setSpacing(10)
+
         url_row = QHBoxLayout()
         url_row.setSpacing(8)
         self.url_edit = QLineEdit()
         self.url_edit.setObjectName("UrlInput")
-        self.url_edit.setPlaceholderText("유튜브 영상이나 재생목록 주소를 붙여넣으세요")
+        self.url_edit.setPlaceholderText("유튜브 영상이나 재생목록 주소를 붙여넣고 Enter")
         self.url_edit.setClearButtonEnabled(True)
-        self.url_edit.returnPressed.connect(self.fetch)
-        self.b_paste = make_button("붙여넣기")
-        self.b_paste.clicked.connect(self._paste)
+        self.url_edit.returnPressed.connect(self._fetch_clicked)
         self.b_fetch = make_button("불러오기", primary=True)
-        self.b_fetch.clicked.connect(self.fetch)
+        self.b_fetch.clicked.connect(self._fetch_clicked)
+        self.b_close_panel = icon_button("close", "닫기 (Esc)", color="#6b737c", size=16, box=30)
+        self.b_close_panel.clicked.connect(self._close_panel)
         url_row.addWidget(self.url_edit, 1)
-        url_row.addWidget(self.b_paste)
         url_row.addWidget(self.b_fetch)
-        root.addLayout(url_row)
-        self.fetch_bar = QProgressBar()
-        self.fetch_bar.setRange(0, 0)
-        self.fetch_bar.setTextVisible(False)
-        self.fetch_bar.setVisible(False)
-        root.addWidget(self.fetch_bar)
+        url_row.addWidget(self.b_close_panel)
+        pl.addLayout(url_row)
 
-        # 정보 + 옵션 카드 ----------------------------------------------
-        card = QFrame()
-        card.setObjectName("Card")
-        cl = QVBoxLayout(card)
-        cl.setContentsMargins(16, 14, 16, 14)
-        cl.setSpacing(10)
+        notice_row = QHBoxLayout()
+        notice_row.setSpacing(8)
+        self.v_notice = QLabel()
+        self.v_notice.setObjectName("Notice")
+        self.v_notice.setWordWrap(True)
+        self.b_fetch_log = make_button("자세한 로그 보기", link=True)
+        self.b_fetch_log.clicked.connect(
+            lambda: show_log_dialog(self, "불러오기 로그", self._last_fetch_log.splitlines()))
+        notice_row.addWidget(self.v_notice, 1)
+        notice_row.addWidget(self.b_fetch_log, 0, Qt.AlignmentFlag.AlignTop)
+        self.notice_box = QWidget()
+        self.notice_box.setLayout(notice_row)
+        notice_row.setContentsMargins(0, 0, 0, 0)
+        pl.addWidget(self.notice_box)
 
-        info_row = QHBoxLayout()
+        self.info_box = QWidget()
+        info_row = QHBoxLayout(self.info_box)
+        info_row.setContentsMargins(0, 2, 0, 0)
         info_row.setSpacing(16)
         self.thumb = QLabel()
         self.thumb.setObjectName("Thumb")
@@ -169,7 +241,7 @@ class MainWindow(QMainWindow):
         self.thumb.setAlignment(Qt.AlignmentFlag.AlignCenter)
         info_row.addWidget(self.thumb, 0, Qt.AlignmentFlag.AlignTop)
         meta_col = QVBoxLayout()
-        meta_col.setSpacing(6)
+        meta_col.setSpacing(5)
         self.v_title = QLabel()
         self.v_title.setObjectName("VideoTitle")
         self.v_title.setWordWrap(True)
@@ -178,68 +250,34 @@ class MainWindow(QMainWindow):
         self.v_meta = QLabel()
         self.v_meta.setObjectName("Muted")
         self.v_meta.setWordWrap(True)
-        self.v_notice = QLabel()
-        self.v_notice.setObjectName("Notice")
-        self.v_notice.setWordWrap(True)
         self.b_load_playlist = make_button("이 주소의 재생목록 전체 불러오기 →", link=True)
         self.b_load_playlist.clicked.connect(lambda: self.fetch(force_playlist=True))
         meta_col.addWidget(self.v_title)
         meta_col.addWidget(self.v_meta)
-        meta_col.addWidget(self.v_notice)
         meta_col.addWidget(self.b_load_playlist, 0, Qt.AlignmentFlag.AlignLeft)
-        self.b_fetch_log = make_button("자세한 로그 보기", link=True)
-        self.b_fetch_log.clicked.connect(
-            lambda: show_log_dialog(self, "불러오기 로그", self._last_fetch_log.splitlines()))
-        meta_col.addWidget(self.b_fetch_log, 0, Qt.AlignmentFlag.AlignLeft)
         meta_col.addStretch(1)
         info_row.addLayout(meta_col, 1)
-        self.b_collapse = make_button("옵션 접기 ▲", ghost=True, tooltip="옵션 영역을 접어서 다운로드 목록을 넓게 보기")
+        self.b_collapse = make_button("옵션 접기 ▲", ghost=True, tooltip="옵션 영역을 접어서 목록을 넓게 보기")
         self.b_collapse.clicked.connect(lambda: self._set_collapsed(not self.settings.options_collapsed))
         info_row.addWidget(self.b_collapse, 0, Qt.AlignmentFlag.AlignTop)
-        cl.addLayout(info_row)
+        pl.addWidget(self.info_box)
 
         self.options_box = QWidget()
         ob = QVBoxLayout(self.options_box)
         ob.setContentsMargins(0, 0, 0, 0)
         ob.setSpacing(10)
         line = QFrame()
-        line.setFrameShape(QFrame.Shape.HLine)
-        line.setStyleSheet("color: #2c3038; background: #2c3038; max-height: 1px; border: none;")
+        line.setObjectName("Divider")
         ob.addWidget(line)
 
-        grid = QGridLayout()
-        grid.setHorizontalSpacing(12)
-        grid.setVerticalSpacing(8)
-        grid.setColumnStretch(1, 1)
-        grid.setColumnStretch(3, 1)
-
-        self.mode = SegmentedToggle([("video", "영상"), ("audio", "음원만")])
-        self.mode.changed.connect(self._on_mode_changed)
-        grid.addWidget(field_label("받을 형식"), 0, 0)
-        grid.addWidget(self.mode, 0, 1, 1, 3, Qt.AlignmentFlag.AlignLeft)
-
-        self.quality = QComboBox()
-        self.quality.setMinimumWidth(180)
-        self.quality.currentIndexChanged.connect(self._on_option_changed)
-        self.fmt = QComboBox()
-        self.fmt.setMinimumWidth(150)
-        self.fmt.currentIndexChanged.connect(self._on_option_changed)
-        self.l_quality = field_label("화질")
-        grid.addWidget(self.l_quality, 1, 0)
-        grid.addWidget(self.quality, 1, 1)
-        self.l_fmt = field_label("파일 형식")
-        grid.addWidget(self.l_fmt, 1, 2)
-        grid.addWidget(self.fmt, 1, 3)
-
         opts = QHBoxLayout()
-        opts.setSpacing(18)
+        opts.setSpacing(14)
         self.b_subs = make_button("자막: 없음", tooltip="이 영상에 있는 자막 중에서 받을 언어와 저장 방식을 골라요")
         self.b_subs.clicked.connect(self._choose_subs)
         opts.addWidget(self.b_subs)
         self.b_tags = make_button("태그: 켬", tooltip="음원 파일의 제목·아티스트·앨범·커버 태그를 넣을지, 어떤 값으로 넣을지 골라요")
         self.b_tags.clicked.connect(self._choose_tags)
         opts.addWidget(self.b_tags)
-        opts.addSpacing(6)
         self.cb_thumb = QCheckBox("썸네일 넣기")
         self.cb_thumb.setToolTip("썸네일을 파일 표지로 넣어요 (MP4/MKV/MP3/M4A 등).")
         self.cb_compat = QCheckBox("편집 호환 (H.264)")
@@ -249,8 +287,6 @@ class MainWindow(QMainWindow):
             cb.toggled.connect(self._on_option_changed)
             opts.addWidget(cb)
         opts.addStretch(1)
-        grid.addWidget(field_label("옵션"), 2, 0)
-        grid.addLayout(opts, 2, 1, 1, 3)
 
         sec = QHBoxLayout()
         sec.setSpacing(8)
@@ -259,116 +295,121 @@ class MainWindow(QMainWindow):
         self.sec_end = QLineEdit()
         self.sec_end.setPlaceholderText("끝 (예: 2:45)")
         for e in (self.sec_start, self.sec_end):
-            e.setMaximumWidth(140)
+            e.setMaximumWidth(130)
             e.textChanged.connect(self._validate_sections)
         tilde = QLabel("~")
         tilde.setObjectName("Muted")
         sec_hint = QLabel("비워두면 전체")
         sec_hint.setObjectName("Small")
+        sec.addWidget(field_label("구간 자르기"))
+        sec.addSpacing(4)
         sec.addWidget(self.sec_start)
         sec.addWidget(tilde)
         sec.addWidget(self.sec_end)
         sec.addSpacing(6)
         sec.addWidget(sec_hint)
         sec.addStretch(1)
-        grid.addWidget(field_label("구간 자르기"), 3, 0)
-        grid.addLayout(sec, 3, 1, 1, 3)
+        ob.addLayout(opts)
+        ob.addLayout(sec)
+        pl.addWidget(self.options_box)
 
-        dest = QHBoxLayout()
-        dest.setSpacing(6)
-        self.dest_label = ElidedLabel("", mode=Qt.TextElideMode.ElideMiddle)
-        self.b_dest = make_button("변경")
-        self.b_dest.clicked.connect(self._choose_dir)
-        self.b_dest_open = make_button("열기", ghost=True)
-        self.b_dest_open.clicked.connect(lambda: reveal_in_explorer(self._ensure_dir()))
-        dest.addWidget(self.dest_label, 1)
-        dest.addWidget(self.b_dest)
-        dest.addWidget(self.b_dest_open)
-        grid.addWidget(field_label("저장 위치"), 4, 0)
-        grid.addLayout(dest, 4, 1, 1, 3)
-        ob.addLayout(grid)
-        cl.addWidget(self.options_box)
-
-        action = QHBoxLayout()
+        self.action_box = QWidget()
+        action = QHBoxLayout(self.action_box)
+        action.setContentsMargins(0, 0, 0, 0)
         self.est_label = QLabel()
         self.est_label.setObjectName("Muted")
-        self.est_label.setMinimumWidth(240)
         self.b_download = make_button("다운로드", primary=True)
         self.b_download.setMinimumWidth(170)
         self.b_download.setMinimumHeight(38)
         self.b_download.clicked.connect(self.add_download)
-        action.addWidget(self.est_label)
-        action.addStretch(1)
+        action.addWidget(self.est_label, 1)
         action.addWidget(self.b_download)
-        cl.addLayout(action)
-        self.top_scroll = QScrollArea()
-        self.top_scroll.setWidgetResizable(True)
-        self.top_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.top_scroll.setFrameShape(QFrame.Shape.NoFrame)
-        self.top_scroll.setWidget(card)
-        self.top_scroll.setMinimumHeight(150)
+        pl.addWidget(self.action_box)
+        bd.addWidget(self.panel)
+        self.panel.setVisible(False)
 
-        # 탭: 다운로드 큐 / 기록 ------------------------------------------
-        self.tabs = QTabWidget()
-        q_page = QWidget()
-        ql = QVBoxLayout(q_page)
-        ql.setContentsMargins(0, 8, 0, 0)
-        ql.setSpacing(8)
-        q_tools = QHBoxLayout()
+        # ---- 필터 탭 줄 ----------------------------------------------------
+        tab_row = QFrame()
+        tab_row.setObjectName("TabRow")
+        tab_row.setStyleSheet("QFrame#TabRow { border: none; border-bottom: 1px solid #e3e6ea; }")
+        tl = QHBoxLayout(tab_row)
+        tl.setContentsMargins(2, 0, 0, 0)
+        tl.setSpacing(0)
+        self._filter = "all"
+        self._filter_btns: dict[str, QPushButton] = {}
+        self._filter_group = QButtonGroup(self)
+        self._filter_group.setExclusive(True)
+        for key, label in (("all", "전체"), ("video", "동영상"), ("audio", "오디오"), ("history", "기록")):
+            b = QPushButton(label)
+            b.setProperty("tab", True)
+            b.setCheckable(True)
+            b.setCursor(Qt.CursorShape.PointingHandCursor)
+            b.clicked.connect(lambda _=False, k=key: self._set_filter(k))
+            self._filter_group.addButton(b)
+            self._filter_btns[key] = b
+            tl.addWidget(b)
+        self._filter_btns["all"].setChecked(True)
+        tl.addStretch(1)
         self.q_status = QLabel()
         self.q_status.setObjectName("Muted")
-        b_clear = make_button("완료 항목 정리", ghost=True)
-        b_clear.clicked.connect(
-            lambda: self.queue.clear_finished(delete_partials=self.settings.delete_partials_on_remove))
-        b_cancel = make_button("모두 취소", ghost=True)
-        b_cancel.clicked.connect(self.queue.cancel_all)
-        q_tools.addWidget(self.q_status)
-        q_tools.addStretch(1)
-        q_tools.addWidget(b_clear)
-        q_tools.addWidget(b_cancel)
-        ql.addLayout(q_tools)
+        tl.addWidget(self.q_status)
+        tl.addSpacing(6)
+        self.b_list_menu = icon_button("kebab", "목록 관리", color="#5f6670", size=18, box=30)
+        self.b_list_menu.clicked.connect(self._list_menu)
+        tl.addWidget(self.b_list_menu)
+        bd.addWidget(tab_row)
 
+        # ---- 목록 / 기록 -------------------------------------------------------
+        self.stack = QStackedWidget()
         self.q_scroll = QScrollArea()
         self.q_scroll.setWidgetResizable(True)
         self.q_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         holder = QWidget()
         self.q_layout = QVBoxLayout(holder)
-        self.q_layout.setContentsMargins(0, 0, 4, 0)
+        self.q_layout.setContentsMargins(0, 2, 4, 0)
         self.q_layout.setSpacing(8)
-        self.q_empty = QLabel("아직 다운로드가 없어요.\n위에 주소를 붙여넣고 [불러오기]를 눌러 보세요.")
-        self.q_empty.setObjectName("Empty")
-        self.q_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.q_empty = QWidget()
+        el = QVBoxLayout(self.q_empty)
+        el.setContentsMargins(0, 56, 0, 0)
+        el.setSpacing(6)
+        empty_icon = QLabel()
+        empty_icon.setPixmap(icons.pixmap("download", "#c9ced4", 56))
+        empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.q_empty_title = QLabel("링크를 붙여넣어 시작하세요")
+        self.q_empty_title.setObjectName("EmptyTitle")
+        self.q_empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.q_empty_sub = QLabel("위의 [링크 붙여넣기]를 누르거나, 창에 주소를 끌어다 놓아도 돼요.\n"
+                                  "유튜브 영상·재생목록·쇼츠 주소를 지원해요.")
+        self.q_empty_sub.setObjectName("Empty")
+        self.q_empty_sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        el.addWidget(empty_icon)
+        el.addWidget(self.q_empty_title)
+        el.addWidget(self.q_empty_sub)
         self.q_layout.addWidget(self.q_empty)
         self.q_layout.addStretch(1)
         self.q_scroll.setWidget(holder)
-        ql.addWidget(self.q_scroll, 1)
-        self.tabs.addTab(q_page, "다운로드")
+        self.stack.addWidget(self.q_scroll)
 
         self.history_view = HistoryView(self.history)
         self.history_view.redownloadRequested.connect(self._redownload)
-        self.tabs.addTab(self.history_view, "기록")
-        self.tabs.setMinimumHeight(160)
-        self.splitter = QSplitter(Qt.Orientation.Vertical)
-        self.splitter.setChildrenCollapsible(False)
-        self.splitter.setHandleWidth(10)
-        self.splitter.addWidget(self.top_scroll)
-        self.splitter.addWidget(self.tabs)
-        self.splitter.setStretchFactor(0, 0)
-        self.splitter.setStretchFactor(1, 1)
-        self.splitter.splitterMoved.connect(lambda *_: self._remember_splitter())
-        root.addWidget(self.splitter, 1)
+        self.stack.addWidget(self.history_view)
+        bd.addWidget(self.stack, 1)
 
-        # 상태 표시줄 ----------------------------------------------------
+        # ---- 상태 표시줄 -------------------------------------------------------
         self.status_msg = QLabel("도구 확인 중…")
-        self.status_msg.setContentsMargins(8, 0, 0, 0)
+        self.status_msg.setContentsMargins(10, 0, 0, 0)
         self.statusBar().addWidget(self.status_msg, 1)
+        self.statusBar().setSizeGripEnabled(False)
         self.deps_btn = QPushButton("")
         self.deps_btn.setProperty("ghost", True)
         self.deps_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.deps_btn.clicked.connect(lambda: self._open_deps_dialog())
         self.statusBar().addPermanentWidget(self.deps_btn)
 
-        QShortcut(QKeySequence("Ctrl+L"), self, activated=lambda: (self.url_edit.setFocus(), self.url_edit.selectAll()))
+        self.toasts = ToastManager(central)
+
+        QShortcut(QKeySequence("Ctrl+L"), self, activated=lambda: self._open_panel(focus=True))
         QShortcut(QKeySequence("Escape"), self, activated=self._escape)
 
     def _build_tray(self) -> None:
@@ -405,8 +446,8 @@ class MainWindow(QMainWindow):
         self.mode.setValue(s.mode)
         self.cb_thumb.setChecked(s.embed_thumbnail)
         self.cb_compat.setChecked(s.compat_h264)
-        self.dest_label.setText(s.download_dir)
-        self.dest_label.setToolTip(s.download_dir)
+        self.auto_toggle.setCheckedSilently(s.auto_download)
+        self._update_dest_chip()
         self._fill_format_combo()
         self._fill_quality_combo()
         self._update_mode_enabled()
@@ -419,11 +460,11 @@ class MainWindow(QMainWindow):
         self.fmt.clear()
         if self.mode.value() == "audio":
             for key, label in AUDIO_FORMATS:
-                self.fmt.addItem(label, key)
+                self.fmt.addChip(label, key, short=label.split(" ")[0])
             self.fmt.setCurrentIndex(max(0, self.fmt.findData(self.settings.audio_format)))
         else:
             for c in VIDEO_CONTAINERS:
-                self.fmt.addItem(c.upper(), c)
+                self.fmt.addChip(c.upper(), c)
             self.fmt.setCurrentIndex(max(0, self.fmt.findData(self.settings.container)))
         self.fmt.blockSignals(False)
 
@@ -433,7 +474,7 @@ class MainWindow(QMainWindow):
         info = self.info
         heights = info.heights if (info and info.kind == "video" and info.heights) else HEIGHT_CHOICES
         best_size = info.estimated_size(0) if (info and info.kind == "video") else None
-        self.quality.addItem("최고 화질" + (f"  ≈ {human_size(best_size)}" if best_size else ""), 0)
+        self.quality.addChip("최고 화질" + (f"  ≈ {human_size(best_size)}" if best_size else ""), 0, short="최고")
         for h in heights:
             size = info.estimated_size(h) if (info and info.kind == "video") else None
             label = height_label(h)
@@ -441,7 +482,7 @@ class MainWindow(QMainWindow):
                 label += f"  ≈ {human_size(size)}"
             elif not (info and info.kind == "video"):
                 label = f"최대 {label}"
-            self.quality.addItem(label, h)
+            self.quality.addChip(label, h, short=height_label(h).split(" ")[0])
         want = self.settings.max_height
         idx = self.quality.findData(want)
         if idx < 0 and want:
@@ -453,13 +494,13 @@ class MainWindow(QMainWindow):
 
     def _update_mode_enabled(self) -> None:
         video = self.mode.value() == "video"
-        for w in (self.quality, self.l_quality, self.cb_compat):
-            w.setEnabled(video)
+        # 음원은 화질이 없어서 숨김 (음질은 설정 창에서)
+        for w in (self.quality, self.l_quality):
+            w.setVisible(video)
         # 음원은 커버를 태그 창에서 정하므로 '썸네일 넣기' 대신 [태그] 버튼
         self.cb_thumb.setVisible(video)
         self.cb_compat.setVisible(video)
         self.b_tags.setVisible(not video)
-        self.l_fmt.setText("파일 형식" if video else "음원 형식")
         self._update_subs_button()
         self._update_estimate()
 
@@ -504,7 +545,7 @@ class MainWindow(QMainWindow):
         ok = True
         for e in (self.sec_start, self.sec_end):
             bad = bool(e.text().strip()) and parse_timecode(e.text()) is None
-            e.setStyleSheet("border-color: #ff6b6b;" if bad else "")
+            e.setStyleSheet(f"border-color: {DANGER};" if bad else "")
             ok = ok and not bad
         return ok
 
@@ -555,11 +596,15 @@ class MainWindow(QMainWindow):
         missing = deps.missing_required()
         if missing:
             self.deps_btn.setText("⚠ 필요한 도구 없음: " + ", ".join(missing))
-            self.deps_btn.setStyleSheet("color: #f5b544;")
+            self.deps_btn.setStyleSheet(f"color: {WARNING};")
+            self.b_tools.setIcon(icons.icon("info", "#e08a1e", 22))
+            self.b_tools.setToolTip("도구 상태 · 필요한 도구가 없어요: " + ", ".join(missing))
         else:
             js = deps.js.name if deps.js else ""
             self.deps_btn.setText(f"yt-dlp {deps.ytdlp.version} · ffmpeg ✔ · {js} ✔")
             self.deps_btn.setStyleSheet("")
+            self.b_tools.setIcon(icons.icon("info", "#5f6670", 22))
+            self.b_tools.setToolTip(f"도구 상태 · yt-dlp {deps.ytdlp.version} · ffmpeg ✔ · {js} ✔")
         if self.status_msg.text() == "도구 확인 중…":
             self.status_msg.setText("준비됐어요")
 
@@ -620,16 +665,62 @@ class MainWindow(QMainWindow):
     # 정보 불러오기
     # ==================================================================
     def _paste(self) -> None:
-        text = QGuiApplication.clipboard().text().strip()
-        if text:
-            self.url_edit.setText(text)
+        """[링크 붙여넣기] - 클립보드의 주소로 바로 불러오기."""
+        text = (QGuiApplication.clipboard().text() or "").strip()
+        first = text.splitlines()[0].strip() if text else ""
+        if first and is_url(first):
+            self._open_panel()
+            self.url_edit.setText(first)
+            self._auto_pending = self.auto_toggle.isChecked()
             self.fetch()
+        else:
+            self._open_panel(focus=True)
+            self.toasts.show("warn", "클립보드에 링크가 없어요",
+                             "주소를 복사한 뒤 다시 누르거나, 아래 칸에 직접 붙여넣어 주세요.")
+
+    def _fetch_clicked(self) -> None:
+        self._auto_pending = False       # 직접 입력해서 누른 건 먼저 보고 고르기
+        self.fetch()
+
+    def _on_auto_toggled(self, on: bool) -> None:
+        self.settings.auto_download = on
+        self.settings.save()
+        self.status_msg.setText("바로 받기 켬 - 링크를 붙여넣으면 지금 설정으로 바로 받아요" if on
+                                else "바로 받기 끔 - 링크를 붙여넣으면 정보를 먼저 보여줘요")
+
+    # ---- 정보 패널 --------------------------------------------------------
+    def _open_panel(self, focus: bool = False) -> None:
+        self._panel_open = True
+        self._update_panel_state()
+        if focus:
+            self.url_edit.setFocus()
+            self.url_edit.selectAll()
+
+    def _close_panel(self) -> None:
+        if self.fetcher.busy:
+            self.fetcher.abort()
+            self._fetch_ui_idle()
+        self._auto_pending = False
+        self._panel_open = False
+        self.url_edit.clear()
+        self._set_info(None)
+        self._update_panel_state()
+
+    def _update_panel_state(self) -> None:
+        has_info = self.info is not None
+        has_notice = bool(self.v_notice.text()) and not self.v_notice.isHidden()
+        self.panel.setVisible(self._panel_open)
+        self.info_box.setVisible(has_info)
+        self.options_box.setVisible(has_info and not self.settings.options_collapsed)
+        self.action_box.setVisible(has_info)
+        self.notice_box.setVisible(has_notice or self.b_fetch_log.isVisibleTo(self.notice_box))
 
     def fetch(self, force_playlist: bool = False) -> None:
         url = self.url_edit.text().strip()
         if not url:
-            self.url_edit.setFocus()
+            self._open_panel(focus=True)
             return
+        self._open_panel()
         if not is_url(url):
             if re.fullmatch(r"[\w-]{11}", url):   # 영상 ID 만 넣은 경우
                 url = f"https://www.youtube.com/watch?v={url}"
@@ -660,6 +751,8 @@ class MainWindow(QMainWindow):
             self.fetcher.abort()
             self._fetch_ui_idle()
             self.status_msg.setText("불러오기를 취소했어요")
+        elif self._panel_open:
+            self._close_panel()
 
     def _fetch_ui_idle(self) -> None:
         self.b_fetch.setEnabled(True)
@@ -679,9 +772,18 @@ class MainWindow(QMainWindow):
         self.info_url = url
         self._set_info(info)
         self.status_msg.setText("불러왔어요")
+        if self._auto_pending:          # '바로 받기': 보여주지 않고 바로 목록에 넣기
+            self._auto_pending = False
+            if info.kind == "video" and self._can_download(info):
+                before = len(self.queue.jobs)
+                self.add_download()
+                if len(self.queue.jobs) > before:
+                    self._close_panel()
+                    self.toasts.show("ok", "다운로드 목록에 추가했어요", info.title, timeout_ms=3500)
 
     def _on_info_failed(self, message: str, url: str, log: str = "") -> None:
         self._fetch_ui_idle()
+        self._auto_pending = False
         self._last_fetch_log = log
         self._set_info(None, error=message)
         self.b_fetch_log.setVisible(bool(log.strip()))
@@ -694,6 +796,8 @@ class MainWindow(QMainWindow):
 
     def _set_info(self, info: Optional[MediaInfo], error: str = "") -> None:
         self.info = info
+        if info is not None or error:
+            self._panel_open = True
         self.thumb.clear()
         self.thumb.setText("미리보기")
         self.v_notice.setVisible(False)
@@ -712,8 +816,8 @@ class MainWindow(QMainWindow):
         self._update_tags_button()
         self._update_subs_button()
         if info is None:
-            self.v_title.setText("주소를 넣고 [불러오기]를 누르면\n영상 정보가 여기에 보여요" if not error else "불러오지 못했어요")
-            self.v_meta.setText("유튜브 영상·재생목록·쇼츠 주소를 지원해요. 창에 주소를 끌어다 놓아도 돼요.")
+            self.v_title.setText("")
+            self.v_meta.setText("")
             if error:
                 self.v_notice.setText(error)
                 self.v_notice.setObjectName("Error")
@@ -723,6 +827,7 @@ class MainWindow(QMainWindow):
             self.b_download.setText("다운로드")
             self._fill_quality_combo()
             self._update_estimate()
+            self._update_panel_state()
             return
 
         self.v_title.setText(info.title)
@@ -764,6 +869,7 @@ class MainWindow(QMainWindow):
                     self.thumb.setPixmap(rounded(pm, THUMB_SIZE, 10))
 
             self.thumbs.load(info.thumbnail, set_thumb)
+        self._update_panel_state()
 
     # ==================================================================
     # 다운로드 추가
@@ -781,8 +887,22 @@ class MainWindow(QMainWindow):
         if d:
             self.settings.download_dir = d
             self.settings.save()
-            self.dest_label.setText(d)
-            self.dest_label.setToolTip(d)
+            self._update_dest_chip()
+
+    def _update_dest_chip(self) -> None:
+        path = self.settings.download_dir
+        name = Path(path).name or path
+        f = self.dest_btn.font()
+        f.setBold(True)
+        self.dest_btn.setText(QFontMetrics(f).elidedText(name, Qt.TextElideMode.ElideMiddle, 150))
+        self.dest_btn.setToolTip(path)
+
+    def _dest_menu(self) -> None:
+        m = QMenu(self)
+        m.addAction("폴더 변경…", self._choose_dir)
+        m.addAction("폴더 열기", lambda: reveal_in_explorer(self._ensure_dir()))
+        m.exec(self.dest_btn.mapToGlobal(QPoint(0, self.dest_btn.height() + 2)))
+        m.deleteLater()
 
     def _current_options(self) -> Optional[DownloadOptions]:
         if not self._validate_sections():
@@ -860,7 +980,9 @@ class MainWindow(QMainWindow):
             for idx, entry in chosen:
                 o = opts.copy(subfolder=folder, index=idx if numbering else None,
                               index_width=width)
-                self.queue.add(DownloadJob(entry.url, entry.title, o, entry.thumbnail or info.thumbnail))
+                job = DownloadJob(entry.url, entry.title, o, entry.thumbnail or info.thumbnail)
+                job.duration = entry.duration
+                self.queue.add(job)
             self.status_msg.setText(f"{len(chosen)}개를 다운로드 목록에 추가했어요")
         else:
             url = info.url or self.info_url
@@ -870,9 +992,12 @@ class MainWindow(QMainWindow):
                 r = QMessageBox.question(self, "이미 목록에 있어요", "같은 설정으로 받는 중이에요. 한 번 더 추가할까요?")
                 if r != QMessageBox.StandardButton.Yes:
                     return
-            self.queue.add(DownloadJob(url, info.title, opts, info.thumbnail))
+            job = DownloadJob(url, info.title, opts, info.thumbnail)
+            job.duration = info.duration
+            self.queue.add(job)
             self.status_msg.setText("다운로드 목록에 추가했어요")
-        self.tabs.setCurrentIndex(0)
+        if self._filter == "history" or self._filter not in ("all", opts.mode):
+            self._set_filter("all")
         if self.sec_start.text() or self.sec_end.text():
             self.sec_start.clear()
             self.sec_end.clear()
@@ -880,7 +1005,9 @@ class MainWindow(QMainWindow):
     def _redownload(self, url: str) -> None:
         if not url:
             return
+        self._open_panel()
         self.url_edit.setText(url)
+        self._auto_pending = False
         self.fetch()
 
     # ==================================================================
@@ -895,7 +1022,7 @@ class MainWindow(QMainWindow):
         self._item_widgets[job.id] = w
         # 빈 안내 문구 다음 / stretch 앞에 추가 (최근 것이 아래)
         self.q_layout.insertWidget(self.q_layout.count() - 1, w)
-        self.q_empty.setVisible(False)
+        self._apply_filter()
         QTimer.singleShot(50, lambda: self.q_scroll.verticalScrollBar().setValue(
             self.q_scroll.verticalScrollBar().maximum()))
 
@@ -904,7 +1031,7 @@ class MainWindow(QMainWindow):
         if w is not None:
             w.setParent(None)
             w.deleteLater()
-        self.q_empty.setVisible(not self._item_widgets)
+        self._apply_filter()
 
     def _on_job_finished(self, job: DownloadJob) -> None:
         if job.state in (DONE, FAILED):
@@ -912,11 +1039,55 @@ class MainWindow(QMainWindow):
             self.history.add(title=job.title, url=job.url, filepath=job.filepath, summary=summary,
                              ok=job.state == DONE, error=job.error, thumbnail=job.thumbnail)
             self.history_view.reload()
+        if self._closing:
+            return
+        if job.state == DONE:
+            if job.skipped:
+                self.toasts.show("warn", "이미 받은 파일이에요", job.title)
+            else:
+                self.toasts.show("ok", "다운로드 완료", job.title)
+        elif job.state == FAILED:
+            self.toasts.show("error", "다운로드 실패", (job.error or job.title)[:140], timeout_ms=8000)
+
+    # ---- 필터 / 목록 관리 --------------------------------------------------
+    def _set_filter(self, key: str) -> None:
+        self._filter = key
+        btn = self._filter_btns.get(key)
+        if btn is not None and not btn.isChecked():
+            btn.setChecked(True)
+        self.stack.setCurrentIndex(1 if key == "history" else 0)
+        self.b_list_menu.setVisible(key != "history")
+        self.q_status.setVisible(key != "history")
+        self._apply_filter()
+
+    def _apply_filter(self) -> None:
+        shown = 0
+        for w in self._item_widgets.values():
+            ok = self._filter in ("all", "history") or w.job.options.mode == self._filter
+            w.setVisible(ok)
+            shown += ok
+        self.q_empty.setVisible(shown == 0)
+        if self._item_widgets and shown == 0:
+            what = "동영상" if self._filter == "video" else "오디오"
+            self.q_empty_title.setText(f"받은 {what}가 없어요" if self._filter == "audio" else f"받은 {what}이 없어요")
+            self.q_empty_sub.setText("다른 탭에서 전체 목록을 볼 수 있어요.")
+        else:
+            self.q_empty_title.setText("링크를 붙여넣어 시작하세요")
+            self.q_empty_sub.setText("위의 [링크 붙여넣기]를 누르거나, 창에 주소를 끌어다 놓아도 돼요.\n"
+                                     "유튜브 영상·재생목록·쇼츠 주소를 지원해요.")
+
+    def _list_menu(self) -> None:
+        m = QMenu(self)
+        m.addAction("완료 항목 정리",
+                    lambda: self.queue.clear_finished(delete_partials=self.settings.delete_partials_on_remove))
+        m.addAction("모두 취소", self.queue.cancel_all)
+        m.exec(self.b_list_menu.mapToGlobal(QPoint(self.b_list_menu.width() - 150, self.b_list_menu.height() + 2)))
+        m.deleteLater()
 
     def _update_counts(self) -> None:
         c = self.queue.counts()
         active = c["running"] + c["queued"]
-        parts = []
+        parts = [f"{len(self.queue.jobs)} 아이템"]
         if c["running"]:
             parts.append(f"진행 {c['running']}")
         if c["queued"]:
@@ -927,8 +1098,7 @@ class MainWindow(QMainWindow):
             parts.append(f"실패 {c['failed']}")
         if c["canceled"]:
             parts.append(f"취소 {c['canceled']}")
-        self.q_status.setText(" · ".join(parts) if parts else "")
-        self.tabs.setTabText(0, f"다운로드 ({active})" if active else "다운로드")
+        self.q_status.setText(" · ".join(parts))
         title = APP_NAME
         if c["running"]:
             fr = [j.fraction for j in self.queue.jobs if j.state == "running" and j.fraction is not None]
@@ -1000,23 +1170,11 @@ class MainWindow(QMainWindow):
 
     def _set_collapsed(self, collapsed: bool, save: bool = True) -> None:
         self.settings.options_collapsed = collapsed
-        self.options_box.setVisible(not collapsed)
         self.b_collapse.setText("옵션 펼치기 ▼" if collapsed else "옵션 접기 ▲")
+        self._update_panel_state()
         self._update_collapsed_summary()
         if save:
             self.settings.save()
-            # 접으면 위쪽 칸을 내용 크기에 맞게 줄여서 목록을 넓힌다
-            QTimer.singleShot(0, self._fit_top)
-
-    def _fit_top(self) -> None:
-        card = self.top_scroll.widget()
-        want = card.sizeHint().height() + 4
-        total = sum(self.splitter.sizes())
-        if total < 400:
-            return
-        top = min(want, max(150, total - 200))
-        self.splitter.setSizes([top, total - top])
-        self._remember_splitter()
 
     def _update_collapsed_summary(self) -> None:
         if not hasattr(self, "options_box"):
@@ -1041,30 +1199,9 @@ class MainWindow(QMainWindow):
             sub_langs=",".join(self.sub_langs), sub_mode=s.sub_mode)
         return preview.summary()
 
-    def _remember_splitter(self) -> None:
-        sizes = self.splitter.sizes()
-        if len(sizes) == 2 and all(sizes):
-            self.settings.splitter_sizes = f"{sizes[0]},{sizes[1]}"
-
-    def _restore_splitter(self) -> None:
-        try:
-            a, b = (int(x) for x in self.settings.splitter_sizes.split(","))
-            if a > 0 and b > 0:
-                self.splitter.setSizes([a, b])
-                return
-        except ValueError:
-            pass
-        self._fit_top()
-
     def _schedule_save(self) -> None:
         if not self._closing and not self._save_timer.isActive():
             self._save_timer.start()
-
-    def showEvent(self, event) -> None:  # noqa: N802
-        super().showEvent(event)
-        if not getattr(self, "_shown_once", False):
-            self._shown_once = True
-            QTimer.singleShot(0, self._restore_splitter)
 
     def _save_queue(self) -> None:
         if not self._closing:
@@ -1113,7 +1250,9 @@ class MainWindow(QMainWindow):
         if not url and md.hasText():
             url = md.text().strip().splitlines()[0] if md.text().strip() else ""
         if is_url(url):
+            self._open_panel()
             self.url_edit.setText(url)
+            self._auto_pending = self.auto_toggle.isChecked()
             self.fetch()
             event.acceptProposedAction()
 
@@ -1135,7 +1274,6 @@ class MainWindow(QMainWindow):
         self._save_timer.stop()
         self.queue.cancel_all()
         self.fetcher.abort()
-        self._remember_splitter()
         self.settings.save()
         if self.tray is not None:
             self.tray.hide()

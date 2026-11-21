@@ -41,6 +41,7 @@ class Settings:
     audio_format: str = "mp3"      # mp3 | m4a | opus | flac | wav | best
     embed_thumbnail: bool = True
     sub_mode: str = "embed"        # 마지막으로 고른 자막 저장 방식
+    auto_download: bool = False    # 바로 받기: 링크를 붙여넣자마자 지금 설정으로 다운로드
 
     # 설정 창
     audio_quality: str = "0"       # 0(최고 VBR) | 320K | 192K | 128K

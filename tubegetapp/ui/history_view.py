@@ -61,7 +61,7 @@ class HistoryView(QWidget):
             item.setData(0, Qt.ItemDataRole.UserRole, rec)
             item.setToolTip(0, rec.get("filepath") or rec.get("error") or rec.get("url", ""))
             if not rec.get("ok"):
-                item.setForeground(2, QColor("#ff6b6b"))
+                item.setForeground(2, QColor("#d33a3a"))
                 item.setToolTip(2, rec.get("error", ""))
             self.tree.addTopLevelItem(item)
         self.count.setText(f"최근 기록 {len(self.history.items)}개 · 두 번 클릭하면 파일이 열려요")

@@ -46,6 +46,7 @@ class DownloadJob(QObject):
         self.title = title or url
         self.options = options
         self.thumbnail = thumbnail
+        self.duration: Optional[float] = None   # 영상 길이(초) - 목록에 보여주기용
 
         self.state = QUEUED
         self.fraction: Optional[float] = None   # 0~1 전체 진행률, None = 알 수 없음(막대 애니메이션)
@@ -71,6 +72,7 @@ class DownloadJob(QObject):
             "url": self.url,
             "title": self.title,
             "thumbnail": self.thumbnail,
+            "duration": self.duration,
             "options": self.options.to_dict(),
             "state": state,
             "error": self.error,
@@ -81,6 +83,8 @@ class DownloadJob(QObject):
     def from_dict(cls, data: dict) -> "DownloadJob":
         job = cls(data.get("url", ""), data.get("title", ""),
                   DownloadOptions.from_dict(data.get("options") or {}), data.get("thumbnail"))
+        dur = data.get("duration")
+        job.duration = float(dur) if isinstance(dur, (int, float)) else None
         state = data.get("state")
         job.partial_files = set(data.get("partial_files") or [])
         if state in (FAILED, CANCELED):
