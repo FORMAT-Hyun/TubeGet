@@ -48,6 +48,7 @@ class Settings:
     embed_metadata: bool = True
     sub_default_langs: str = ""    # 영상을 불러올 때 자동으로 골라둘 자막 언어 (비우면 안 고름)
     sub_default_auto: bool = False # 올린 자막이 없으면 자동 생성 자막으로 골라두기
+    dub_default: str = ""          # 재생목록에서 기본으로 받을 더빙(음성 언어) 코드. 비우면 원본 음성
     overwrite_existing: bool = False
     audio_tags_default: bool = True      # 음원 태그 기본으로 넣기
     audio_tag_clean: bool = True         # 음원 태그 자동 정리 ('아티스트 - 곡명' 나누기, 꼬리표 지우기)

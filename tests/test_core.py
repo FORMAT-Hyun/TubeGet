@@ -248,3 +248,21 @@ def test_tag_args():
     assert DownloadOptions(mode="audio", audio_tags=False).summary().endswith("태그 끔")
     vid = build_args(DownloadOptions(mode="video", audio_tags=False), "u")
     assert "--embed-metadata" in vid   # 영상은 설정의 메타데이터 옵션을 따름
+
+
+def test_dub_args_and_parse():
+    o = DownloadOptions(dub_lang="ko")
+    a = build_args(o, "https://x/y")
+    assert a[a.index("-f") + 1] == "bv*+ba[language^=ko]/bv*+ba/b"
+    a = build_args(DownloadOptions(mode="audio", dub_lang="en-US"), "https://x/y")
+    assert a[a.index("-f") + 1] == "ba[language^=en-US]/ba/b"
+    assert build_args(DownloadOptions(), "https://x/y")[build_args(DownloadOptions(), "u").index("-f") + 1] == "bv*+ba/b"
+    # 이상한 문자는 걸러냄
+    assert DownloadOptions(dub_lang="ko]/x[").dub_selector() == "[language^=kox]"
+    assert "더빙 ko" in o.summary()
+    assert DownloadOptions.from_dict(o.to_dict()).dub_lang == "ko"
+    info = parse_info({"id": "a", "title": "t", "formats": [
+        {"format_id": "1", "vcodec": "none", "acodec": "aac", "language": "en", "format_note": "English - original (default)"},
+        {"format_id": "2", "vcodec": "none", "acodec": "aac", "language": "ko", "format_note": "Korean - dubbed-auto"},
+        {"format_id": "3", "vcodec": "none", "acodec": "aac"}]})
+    assert info.dubs == {"en": "original", "ko": "dubbed"} and info.dub_original == "en"

@@ -18,6 +18,10 @@ def build_info(base: str, srv: str) -> dict:
         {"format_id": "139", "ext": "m4a", "vcodec": "none", "acodec": "mp4a.40.5", "abr": 48, "filesize": 1_400_000},
         {"format_id": "140", "ext": "m4a", "vcodec": "none", "acodec": "mp4a.40.2", "abr": 129, "filesize": asize},
         {"format_id": "251", "ext": "webm", "vcodec": "none", "acodec": "opus", "abr": 135, "filesize": 3_800_000},
+        {"format_id": "140-0", "ext": "m4a", "vcodec": "none", "acodec": "mp4a.40.2", "abr": 129, "filesize": asize,
+         "language": "en", "format_note": "English (US) - original (default), medium"},
+        {"format_id": "140-1", "ext": "m4a", "vcodec": "none", "acodec": "mp4a.40.2", "abr": 129, "filesize": asize,
+         "language": "ko", "format_note": "Korean - dubbed-auto, medium"},
     ]
     for fid, h, codec, ext, size in [
         ("160", 144, "avc1.4d400c", "mp4", 1_900_000), ("133", 240, "avc1.4d4015", "mp4", 3_600_000),

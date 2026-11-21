@@ -32,7 +32,7 @@ from .history_view import HistoryView
 from .playlist_dialog import PlaylistDialog
 from .queue_item import QueueItemWidget
 from .settings_dialog import SettingsDialog
-from .subtitle_dialog import SubtitleDialog, default_selection, summarize
+from .subtitle_dialog import LANG_NAMES, SubtitleDialog, default_selection, dub_name, summarize
 from .tag_dialog import TagDialog, TagState
 from . import icons
 from .theme import BORDER, DANGER, ICON, MUTED, WARNING, app_icon, repolish
@@ -62,6 +62,7 @@ class MainWindow(QMainWindow):
         self._last_fetch_log = ""
         self.sub_langs: list[str] = []     # 지금 영상에서 고른 자막
         self.sub_auto = False
+        self.dub_lang = ""                 # 지금 영상에서 고른 더빙(음성 언어)
         self.tag_state = TagState()           # 음원 태그 (영상마다)
         self._auto_pending = False            # '바로 받기'로 불러온 링크인지
         self._panel_open = False              # 정보 패널이 열려 있는지
@@ -89,8 +90,8 @@ class MainWindow(QMainWindow):
 
         self.setWindowTitle(APP_NAME)
         self.setWindowIcon(app_icon())
-        self.resize(1120, 820)
-        self.setMinimumSize(1040, 600)
+        self.resize(1200, 820)
+        self.setMinimumSize(1160, 600)
         self.setAcceptDrops(True)
 
         self._build_ui()
@@ -170,9 +171,9 @@ class MainWindow(QMainWindow):
         self.dest_btn.clicked.connect(self._dest_menu)
         bl.addWidget(self.dest_btn)
         bl.addSpacing(8)
-        self.l_subs = chip_label("자막")
+        self.l_subs = chip_label("자막/더빙")
         self.b_subs = ChipButton()
-        self.b_subs.setToolTip("받을 자막 언어와 저장 방식을 골라요 (영상마다 따로 정할 수 있어요)")
+        self.b_subs.setToolTip("받을 자막 언어, 더빙(음성 언어), 저장 방식을 골라요 (영상마다 따로 정할 수 있어요)")
         self.b_subs.clicked.connect(self._choose_subs)
         bl.addWidget(self.l_subs)
         bl.addWidget(self.b_subs)
@@ -767,8 +768,10 @@ class MainWindow(QMainWindow):
             if info.kind == "playlist" and self.settings.sub_default_langs:
                 self.sub_langs = [c.strip() for c in self.settings.sub_default_langs.split(",") if c.strip()]
                 self.sub_auto = self.settings.sub_default_auto
+            self.dub_lang = self.settings.dub_default if info.kind == "playlist" else ""
         else:
             self.sub_langs, self.sub_auto = [], False
+            self.dub_lang = ""
         self.tag_state = TagState.for_info(info, self.settings.audio_tags_default,
                                            self.settings.embed_thumbnail, self.settings.audio_tag_clean)
         self._update_tags_button()
@@ -810,6 +813,8 @@ class MainWindow(QMainWindow):
                 bits.append((f"최대 {height_label(info.heights[0])}", True))
             if info.subtitles:
                 bits.append((f"자막 {len(info.subtitles)}개", False))
+            if len(info.dubs) > 1:
+                bits.append((f"더빙 {len(info.dubs)}개", False))
             self._set_meta(bits)
             if info.is_live:
                 self.v_notice.setText("라이브 방송이나 예정된 최초 공개는 받을 수 없어요. 방송이 끝난 뒤 다시 시도해 주세요.")
@@ -880,6 +885,7 @@ class MainWindow(QMainWindow):
             audio_quality=s.audio_quality,
             sub_langs=",".join(self.sub_langs),
             auto_subs=self.sub_auto,
+            dub_lang=self.dub_lang,
             sub_mode=s.sub_mode,
             overwrite=s.overwrite_existing,
             embed_thumbnail=self.tag_state.cover if self.mode.value() == "audio" else True,
@@ -1073,13 +1079,15 @@ class MainWindow(QMainWindow):
         selected = self.sub_langs
         if (info is None or info.kind != "video") and not selected:
             selected = []
-        dlg = SubtitleDialog(info, selected, self.sub_auto, self.settings.sub_mode, audio, parent=self)
+        dlg = SubtitleDialog(info, selected, self.sub_auto, self.settings.sub_mode, audio, dub=self.dub_lang, parent=self)
         accepted = dlg.exec()
         result = dlg.result_selection()
+        dub = dlg.result_dub()
         dlg.deleteLater()
         if accepted:
             langs, auto, mode = result
             self.sub_langs, self.sub_auto = langs, auto
+            self.dub_lang = dub
             if not audio:
                 self.settings.sub_mode = mode
                 self.settings.save()
@@ -1112,14 +1120,16 @@ class MainWindow(QMainWindow):
 
     def _update_subs_button(self) -> None:
         audio = self.mode.value() == "audio"
-        text = summarize(self.sub_langs, self.sub_auto, self.settings.sub_mode, audio)
-        if text.startswith("자막: "):
-            text = text[4:]
+        full = summarize(self.sub_langs, self.sub_auto, self.settings.sub_mode, audio, self.dub_lang)
+        names = [LANG_NAMES.get(c.split("-")[0], c) for c in self.sub_langs]
+        text = (", ".join(names[:2]) + (f" 외 {len(names) - 2}" if len(names) > 2 else "")) if names else "없음"
         info = self.info
-        if info is not None and info.kind == "video" and not info.subtitles and not info.auto_captions:
-            text = "이 영상엔 없음"
-        self.b_subs.setToolTip("받을 자막 언어와 저장 방식을 골라요 (영상마다 따로 정할 수 있어요)\n지금: " + text)
-        self.b_subs.setText(self._clip(text, 9))
+        if not names and info is not None and info.kind == "video" and not info.subtitles and not info.auto_captions:
+            text = "자막 없음"
+        if self.dub_lang:
+            text += f" · {dub_name(self.dub_lang)} 더빙"
+        self.b_subs.setToolTip("받을 자막 언어, 더빙(음성 언어), 저장 방식을 골라요 (영상마다 따로 정할 수 있어요)\n지금: " + full)
+        self.b_subs.setText(self._clip(text, 15))
 
     @staticmethod
     def _set_pill_active(btn: QPushButton, on: bool) -> None:

@@ -38,6 +38,8 @@ class MediaInfo:
     upload_date: str = ""
     subtitles: dict[str, str] = field(default_factory=dict)      # 올린 자막: 코드 → 이름
     auto_captions: dict[str, str] = field(default_factory=dict)  # 자동 생성 자막: 코드 → 이름
+    dubs: dict[str, str] = field(default_factory=dict)           # 음성 트랙(더빙): 언어 코드 → 설명
+    dub_original: str = ""                                       # 원본 음성 언어 코드
 
     def estimated_size(self, height: int, mode: str = "video") -> Optional[int]:
         """대략적인 파일 크기 (영상 + 음성)."""
@@ -175,6 +177,13 @@ def parse_info(data: dict) -> MediaInfo:
             if size:
                 sizes[h] = max(sizes.get(h, 0), int(size))
         elif vcodec == "none" and acodec and acodec != "none":
+            lang = f.get("language")
+            if isinstance(lang, str) and lang and lang != "und":
+                note = str(f.get("format_note") or "").lower()
+                info.dubs.setdefault(lang, "dubbed" if "dubbed" in note else "")
+                if "original" in note:
+                    info.dub_original = lang
+                    info.dubs[lang] = "original"
             if size:
                 audio_best = max(audio_best or 0, int(size))
     # 형식 목록이 없으면(일부 사이트) height 필드라도 사용

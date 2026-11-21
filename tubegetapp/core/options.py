@@ -46,6 +46,7 @@ class DownloadOptions:
     audio_quality: str = "0"
     sub_langs: str = ""                 # 받을 자막 언어 코드 (쉼표). 비면 자막 없음
     auto_subs: bool = False             # 자동 생성 자막 허용
+    dub_lang: str = ""                  # 더빙(음성 언어) 코드. 비면 원본 음성
     sub_mode: str = "embed"             # embed(영상에 넣기) | file(.srt 따로) | both
     overwrite: bool = False             # 이미 있는 파일 덮어쓰기
     audio_tags: bool = True             # 음원: 태그 넣기 (끄면 태그를 모두 비움)
@@ -82,6 +83,15 @@ class DownloadOptions:
         # 음원에는 자막을 넣을 수 없으니 파일로만
         return "file" if self.mode == "audio" else self.sub_mode
 
+    @property
+    def has_dub(self) -> bool:
+        return bool(self.dub_lang.strip())
+
+    def dub_selector(self) -> str:
+        """음성 트랙 선택 조건. 그 언어 트랙이 없는 영상은 원본 음성으로 받는다."""
+        lang = "".join(ch for ch in self.dub_lang.strip() if ch.isalnum() or ch in "-_")
+        return f"[language^={lang}]" if lang else ""
+
     def subs_summary(self) -> str:
         if not self.has_subs:
             return ""
@@ -99,6 +109,8 @@ class DownloadOptions:
                 text += " · 태그 편집"
             elif self.tag_smart:
                 text += " · 태그 자동정리"
+            if self.has_dub:
+                text += f" · 더빙 {self.dub_lang}"
             if self.has_subs:
                 text += " · " + self.subs_summary()
         else:
@@ -106,6 +118,8 @@ class DownloadOptions:
             text = f"영상 · {q} · {self.container.upper()}"
             if self.compat_h264:
                 text += " · H.264"
+            if self.has_dub:
+                text += f" · 더빙 {self.dub_lang}"
             if self.has_subs:
                 text += " · " + self.subs_summary()
         if self.section_start is not None or self.section_end is not None:
@@ -144,7 +158,8 @@ def build_args(opts: DownloadOptions, url: str, deps: Optional[Deps] = None) -> 
     ]
 
     if opts.mode == "audio":
-        args += ["-f", "ba/b", "-x"]
+        sel = opts.dub_selector()
+        args += ["-f", f"ba{sel}/ba/b" if sel else "ba/b", "-x"]
         if opts.audio_format != "best":
             args += ["--audio-format", opts.audio_format]
         if opts.audio_format in _LOSSY_AUDIO:
@@ -172,7 +187,8 @@ def build_args(opts: DownloadOptions, url: str, deps: Optional[Deps] = None) -> 
             sort += ["ext:mp4:m4a"]
         elif opts.container == "webm":
             sort += ["ext:webm:webm"]
-        args += ["-f", "bv*+ba/b"]
+        sel = opts.dub_selector()
+        args += ["-f", f"bv*+ba{sel}/bv*+ba/b" if sel else "bv*+ba/b"]
         if sort:
             args += ["-S", ",".join(sort)]
         args += ["--merge-output-format", opts.container]

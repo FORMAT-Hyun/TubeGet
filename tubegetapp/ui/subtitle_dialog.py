@@ -1,4 +1,4 @@
-"""영상별 자막 선택 창.
+"""영상별 자막 / 더빙(음성 언어) 선택 창.
 
 - 영상: 그 영상에 실제로 있는 자막(올린 자막 / 자동 생성 자막) 중에서 고른다.
 - 재생목록: 영상마다 자막이 달라서 언어 코드로 고른다 (있는 영상만 받아짐).
@@ -8,7 +8,7 @@ from __future__ import annotations
 from typing import Optional
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel,
+from PySide6.QtWidgets import (QButtonGroup, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QHBoxLayout, QLabel,
                                QLineEdit, QListWidget, QListWidgetItem, QRadioButton, QVBoxLayout, QWidget)
 
 from ..core.metadata import MediaInfo
@@ -49,21 +49,26 @@ def _auto_sort_key(code: str, name: str) -> tuple:
     return (0 if orig else 1, pri, (name or code).lower())
 
 
-def summarize(langs: list[str], auto: bool, mode: str, audio: bool) -> str:
+def dub_name(code: str) -> str:
+    return LANG_NAMES.get(code) or LANG_NAMES.get(code.split("-")[0]) or code
+
+
+def summarize(langs: list[str], auto: bool, mode: str, audio: bool, dub: str = "") -> str:
     if not langs:
-        return "자막: 없음"
+        return f"자막 없음 · 더빙 {dub_name(dub)}" if dub else "자막: 없음"
     names = [LANG_NAMES.get(c.split("-")[0], c) for c in langs]
     shown = ", ".join(names[:3]) + (f" 외 {len(names) - 3}개" if len(names) > 3 else "")
     m = "파일" if audio else {"embed": "넣기", "file": "파일", "both": "넣기+파일"}.get(mode, "")
-    return f"자막: {shown} ({m})"
+    text = f"자막: {shown} ({m})"
+    return f"{text} · 더빙 {dub_name(dub)}" if dub else text
 
 
 class SubtitleDialog(QDialog):
     def __init__(self, info: Optional[MediaInfo], selected: list[str], auto: bool, mode: str,
-                 audio_mode: bool, playlist_default: str = "ko,en", parent: Optional[QWidget] = None):
+                 audio_mode: bool, playlist_default: str = "ko,en", dub: str = "", parent: Optional[QWidget] = None):
         super().__init__(parent)
-        self.setWindowTitle("자막 선택")
-        self.resize(520, 600)
+        self.setWindowTitle("자막 / 더빙 선택")
+        self.resize(520, 660)
         self.info = info
         self.generic = info is None or info.kind != "video"
         self.audio_mode = audio_mode
@@ -127,6 +132,34 @@ class SubtitleDialog(QDialog):
             else:
                 lay.addStretch(1)
 
+        # 더빙 (음성 언어) -------------------------------------------------
+        lay.addSpacing(4)
+        lay.addWidget(QLabel("<b>더빙 (음성 언어)</b>"))
+        self.dub_combo = QComboBox()
+        self.dub_combo.addItem("원본 음성 (기본)", "")
+        if self.generic:
+            codes = list(dict.fromkeys(COMMON_LANGS[:3] + [c for c in COMMON_LANGS if c not in ("zh-Hans", "zh-Hant")]
+                                       + ([dub] if dub else [])))
+            for c in codes:
+                self.dub_combo.addItem(lang_label(c), c)
+            dub_note = "영상마다 다르고, 고른 언어 음성이 없는 영상은 원본 음성으로 받아요."
+        else:
+            dubs = info.dubs
+            for c in sorted(dubs, key=lambda c: _auto_sort_key(c, dubs[c])):
+                tag = " (원본)" if dubs[c] == "original" else ""
+                self.dub_combo.addItem(lang_label(c) + tag, c)
+            if dub and self.dub_combo.findData(dub) < 0:
+                self.dub_combo.addItem(lang_label(dub), dub)
+            dub_note = ("유튜브의 자동 더빙 등 다른 언어 음성으로 받아요." if len(dubs) > 1
+                        else "이 영상에는 다른 언어 음성이 없어요. (원본 음성으로 받아요)")
+        self.dub_combo.setCurrentIndex(max(0, self.dub_combo.findData(dub)))
+        self.dub_combo.setEnabled(self.dub_combo.count() > 1)
+        lay.addWidget(self.dub_combo)
+        dn = QLabel(dub_note)
+        dn.setObjectName("Small")
+        dn.setWordWrap(True)
+        lay.addWidget(dn)
+
         # 저장 방식 ------------------------------------------------------
         lay.addSpacing(4)
         lay.addWidget(QLabel("<b>저장 방식</b>"))
@@ -148,7 +181,7 @@ class SubtitleDialog(QDialog):
             lay.addWidget(n)
 
         box = QDialogButtonBox()
-        clear = make_button("모두 해제", ghost=True)
+        clear = make_button("자막 모두 해제", ghost=True)
         clear.clicked.connect(self._clear)
         box.addButton(clear, QDialogButtonBox.ButtonRole.ResetRole)
         ok = make_button("확인", primary=True)
@@ -187,6 +220,9 @@ class SubtitleDialog(QDialog):
             return []
         return [lst.item(i).data(Qt.ItemDataRole.UserRole) for i in range(lst.count())
                 if lst.item(i).checkState() == Qt.CheckState.Checked]
+
+    def result_dub(self) -> str:
+        return str(self.dub_combo.currentData() or "")
 
     def result_selection(self) -> tuple[list[str], bool, str]:
         """(언어 코드 목록, 자동 생성 자막 허용, 저장 방식)"""
