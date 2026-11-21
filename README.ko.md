@@ -140,6 +140,6 @@ yt-dlp를 라이브러리로 넣지 않고 **별도 실행 파일로 호출**해
 
 TubeGet 코드는 [MIT 라이선스](LICENSE)예요. 자유롭게 쓰고 고치고 나눌 수 있어요.
 
-- 함께 쓰는 도구(yt-dlp, FFmpeg, PySide6, youtubedl-android 등)는 각자의 라이선스를 따라요. 자세한 내용은 [LICENSE](LICENSE) 아래쪽에 있어요.
+- 함께 쓰는 도구(yt-dlp, FFmpeg, PySide6, youtubedl-android 등)는 각자의 라이선스를 따라요. 자세한 내용은 [NOTICE.md](NOTICE.md)에 있어요.
 - 안드로이드 APK에는 GPL-3.0인 youtubedl-android가 들어 있어서, 배포되는 APK 전체는 GPL-3.0 조건을 따라요.
 - 저작권이 있는 콘텐츠는 저장할 권리가 있을 때만 받아 주세요. 사용에 대한 책임은 사용자에게 있어요.
