@@ -27,6 +27,7 @@ from ..core.queue_store import load_jobs, save_jobs
 from ..core.runner import DONE, FAILED, DownloadJob
 from ..utils import (has_playlist_param, has_video_param, human_duration, human_size, is_url,
                      is_youtube_url, reveal_in_explorer)
+from .about_dialog import AboutDialog, version_text
 from .deps_dialog import DepsDialog
 from .history_view import HistoryView
 from .playlist_dialog import PlaylistDialog
@@ -331,6 +332,13 @@ class MainWindow(QMainWindow):
         self.deps_btn.setCursor(Qt.CursorShape.PointingHandCursor)
         self.deps_btn.clicked.connect(lambda: self._open_deps_dialog())
         self.statusBar().addPermanentWidget(self.deps_btn)
+        self.about_btn = QPushButton(f"{APP_NAME} {APP_VERSION}")
+        self.about_btn.setProperty("ghost", True)
+        self.about_btn.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.about_btn.setToolTip(f"앱 정보 · {version_text()} (F1)")
+        self.about_btn.clicked.connect(self._open_about)
+        self.statusBar().addPermanentWidget(self.about_btn)
+        QShortcut(QKeySequence("F1"), self, activated=self._open_about)
 
         self.toasts = ToastManager(central)
 
@@ -552,6 +560,11 @@ class MainWindow(QMainWindow):
         dlg.exec()
         dlg.deleteLater()
         self.queue.set_paused(False)
+
+    def _open_about(self) -> None:
+        dlg = AboutDialog(self.deps if self.deps_ready else None, self)
+        dlg.exec()
+        dlg.deleteLater()
 
     def _open_settings(self) -> None:
         dlg = SettingsDialog(self.settings, self)

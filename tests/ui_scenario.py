@@ -79,6 +79,17 @@ check(w.minimumSizeHint().width() <= w.minimumWidth(), f"툴바가 최소 너비
 check(not w.auto_toggle.isChecked(), "바로 받기는 기본 꺼짐")
 shot("u01_start")
 
+# --- 앱 정보 창 -------------------------------------------------------------------
+from tubegetapp import APP_VERSION  # noqa: E402
+from tubegetapp.ui.about_dialog import AboutDialog  # noqa: E402
+check(APP_VERSION in w.about_btn.text(), "상태 표시줄에 앱 버전 버튼: " + w.about_btn.text())
+_ab = AboutDialog(w.deps, w); _ab.show(); app.processEvents()
+check("0.1.1" in _ab.version.text() and "베타" in _ab.version.text(), "앱 정보 창에 버전/단계: " + _ab.version.text())
+_ab._copy()
+check(QGuiApplication.clipboard().text().startswith("TubeGet 0.1.1"), "정보 복사 → 클립보드")
+shot("u00_about")
+_ab.close(); _ab.deleteLater()
+
 # --- 링크 붙여넣기: 클립보드에 주소가 없을 때 ------------------------------------
 QGuiApplication.clipboard().setText("그냥 글자")
 w._paste()
