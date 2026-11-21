@@ -68,7 +68,8 @@ With [Instant] on, steps 2 and 3 are skipped.
 
 | Problem | Solution |
 |---|---|
-| "Bot check", "age-restricted" or "members-only" errors | Under [Settings → Browser cookies], choose a browser that is logged in to YouTube (Firefox works best) |
+| "Bot check" error | If you use a VPN (Cloudflare WARP, etc.), turn it off and try again. If that doesn't help, choose Firefox under [Settings → Browser cookies] |
+| "Age-restricted" or "members-only" errors | Under [Settings → Browser cookies], choose Firefox logged in to YouTube. Recent Chrome, Edge and Whale on Windows encrypt their cookies, so they usually can't be read |
 | 403 errors, downloads suddenly stop working | YouTube has often changed. [Tool status] → [Update yt-dlp] |
 | Only up to 360p is available | Often happens when Deno is missing. Install it from [Tool status] |
 | The video won't open in an editor | Turn on **Prefer editing-friendly (H.264)** in Settings and download again |

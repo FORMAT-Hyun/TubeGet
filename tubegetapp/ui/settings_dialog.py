@@ -159,9 +159,9 @@ class SettingsDialog(QDialog):
             self.cookies.addItem(label, key)
         self.cookies.setCurrentIndex(max(0, self.cookies.findData(settings.cookies_browser)))
         f.addRow(tr("쿠키 가져올 브라우저"), self.cookies)
-        note = QLabel(tr("유튜브에 로그인된 브라우저를 고르세요. 크롬 계열은 브라우저를 완전히 닫아야 읽히는 경우가 많고, "
-                      "최신 크롬은 보안 정책 때문에 실패할 수 있어서 Firefox가 가장 안정적이에요. "
-                      "평소에는 '사용 안 함'을 권장해요."))
+        note = QLabel(tr("평소에는 '사용 안 함'을 권장해요. 봇 확인이 뜨면 먼저 VPN(Cloudflare WARP 등)을 꺼 보세요. "
+                      "쿠키가 꼭 필요하면 유튜브에 로그인된 Firefox를 고르세요. Windows의 최신 크롬·엣지·웨일은 "
+                      "쿠키를 암호화해서 읽을 수 없는 경우가 많아요."))
         note.setObjectName("Small")
         note.setWordWrap(True)
         f.addRow("", note)

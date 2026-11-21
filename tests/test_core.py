@@ -147,6 +147,13 @@ def test_errors():
     assert "Deno" in explain("WARNING: [youtube] No supported JavaScript runtime could be found.\nERROR: something")
     assert "비공개" in explain("ERROR: [youtube] abc: Private video. Sign in if you've been granted access")
     assert "봇" in explain("ERROR: [youtube] x: Sign in to confirm you’re not a bot. Use --cookies")
+    assert "VPN" in explain("ERROR: [youtube] x: Sign in to confirm you’re not a bot. Use --cookies")
+    # 브라우저가 켜져 있어 쿠키 DB 복사 실패 (실제 웨일 로그)
+    locked = explain("ERROR: Could not copy Chrome cookie database. See  https://github.com/yt-dlp/yt-dlp/issues/7271")
+    assert "켜져 있어서" in locked
+    # 최신 크롬 계열의 App-Bound 암호화
+    assert "암호화" in explain("WARNING: cannot decrypt v20 cookies: AppBound encryption is not supported\n"
+                             "ERROR: [youtube] x: Sign in to confirm you’re not a bot.")
     assert "403" in explain("ERROR: unable to download video data: HTTP Error 403: Forbidden")
     msg = explain("ERROR: [generic] weird thing happened; please report this issue on https://x")
     assert msg.startswith("다운로드에 실패했어요: weird thing happened")
@@ -280,10 +287,10 @@ def test_video_tag_args():
 def test_version_and_about_text():
     import tubegetapp
     from tubegetapp.core.deps import Deps, Tool
-    assert tubegetapp.APP_VERSION == "0.1.3" and tubegetapp.APP_STAGE == "베타"
+    assert tubegetapp.APP_VERSION == "0.1.4" and tubegetapp.APP_STAGE == "베타"
     from tubegetapp.ui.about_dialog import report_text, tool_line, version_text
-    assert version_text() == "0.1.3 (베타)"
+    assert version_text() == "0.1.4 (베타)"
     d = Deps(ytdlp=Tool("yt-dlp", "/x/yt-dlp", "2026.10.26", True), ffmpeg=Tool("ffmpeg"))
     assert tool_line(d.ytdlp) == "2026.10.26 · TubeGet 폴더" and tool_line(d.ffmpeg) == "없음"
     t = report_text(d)
-    assert t.startswith("TubeGet 0.1.3 (베타)") and "yt-dlp: 2026.10.26" in t and "ffmpeg: 없음" in t
+    assert t.startswith("TubeGet 0.1.4 (베타)") and "yt-dlp: 2026.10.26" in t and "ffmpeg: 없음" in t

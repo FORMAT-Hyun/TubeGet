@@ -95,8 +95,8 @@ STRINGS: dict[str, str] = {
         "The JavaScript runtime (Deno) needed for YouTube is missing. Install Deno from [Tool status].",
     "ffmpeg가 없어서 영상과 음성을 합치거나 변환할 수 없어요. [도구 상태]에서 ffmpeg를 설치해 주세요.":
         "ffmpeg is missing, so video and audio can't be merged or converted. Install ffmpeg from [Tool status].",
-    "유튜브가 봇 확인을 요구해요. [설정 → 브라우저 쿠키]에서 로그인된 브라우저를 고른 뒤 다시 시도해 보세요.":
-        "YouTube is asking for bot verification. Choose a logged-in browser under [Settings → Browser cookies] and try again.",
+    "유튜브가 봇 확인을 요구해요. VPN(Cloudflare WARP 등)을 켜 두었다면 끄고 다시 시도해 보세요. 그래도 안 되면 [설정 → 브라우저 쿠키]에서 Firefox를 골라 보세요.":
+        "YouTube is asking for bot verification. If you use a VPN (Cloudflare WARP, etc.), turn it off and try again. If that doesn't help, choose Firefox under [Settings → Browser cookies].",
     "연령 제한 영상이에요. [설정 → 브라우저 쿠키]에서 로그인된 브라우저를 고르면 받을 수 있어요.":
         "This video is age-restricted. Choose a logged-in browser under [Settings → Browser cookies] to download it.",
     "비공개 영상이라 받을 수 없어요.": "This is a private video and can't be downloaded.",
@@ -112,8 +112,10 @@ STRINGS: dict[str, str] = {
     "삭제되었거나 볼 수 없는 영상이에요.": "This video was deleted or isn't available.",
     "선택한 화질/형식이 이 영상에 없어요. 화질을 '최고 화질'로 바꿔서 다시 시도해 보세요.":
         "The selected quality/format isn't available for this video. Switch the quality to 'Best quality' and try again.",
-    "브라우저 쿠키를 읽지 못했어요. 브라우저를 완전히 종료한 뒤 다시 시도하거나, 설정에서 Firefox를 선택해 보세요.":
-        "Could not read the browser cookies. Fully close the browser and try again, or choose Firefox in Settings.",
+    "브라우저가 켜져 있어서 쿠키를 읽지 못했어요. 그 브라우저를 완전히 종료한 뒤 다시 시도하거나, [설정 → 브라우저 쿠키]를 '사용 안 함'으로 바꿔 주세요.":
+        "Could not read the cookies because the browser is open. Fully close that browser and try again, or set [Settings → Browser cookies] to 'Don't use'.",
+    "이 브라우저의 쿠키는 읽을 수 없어요. Windows의 최신 크롬·엣지·웨일은 쿠키를 암호화해서 막아 둬요. Firefox를 고르거나 '사용 안 함'으로 바꿔 주세요.":
+        "This browser's cookies can't be read. Recent Chrome, Edge and Whale on Windows encrypt their cookies to block other apps. Choose Firefox or set it to 'Don't use'.",
     "유튜브가 접근을 막았어요(403). [도구 상태]에서 yt-dlp를 업데이트한 뒤 다시 시도해 보세요.":
         "YouTube blocked access (403). Update yt-dlp from [Tool status] and try again.",
     "요청이 너무 많아 잠시 차단됐어요(429). 잠시 후 다시 시도하거나 동시 다운로드 수를 줄여 주세요.":
@@ -365,8 +367,8 @@ STRINGS: dict[str, str] = {
         "When a video address includes a playlist (list=), show the whole playlist instead of just one video.",
     "브라우저 쿠키 (연령 제한·멤버십·봇 확인 영상용)": "Browser cookies (for age-restricted, members-only and bot-check videos)",
     "쿠키 가져올 브라우저": "Browser to get cookies from",
-    "유튜브에 로그인된 브라우저를 고르세요. 크롬 계열은 브라우저를 완전히 닫아야 읽히는 경우가 많고, 최신 크롬은 보안 정책 때문에 실패할 수 있어서 Firefox가 가장 안정적이에요. 평소에는 '사용 안 함'을 권장해요.":
-        "Choose a browser that is logged in to YouTube. Chrome-based browsers often must be fully closed to be read, and recent Chrome versions may fail because of security policies, so Firefox is the most reliable. 'Don't use' is recommended for everyday use.",
+    "평소에는 '사용 안 함'을 권장해요. 봇 확인이 뜨면 먼저 VPN(Cloudflare WARP 등)을 꺼 보세요. 쿠키가 꼭 필요하면 유튜브에 로그인된 Firefox를 고르세요. Windows의 최신 크롬·엣지·웨일은 쿠키를 암호화해서 읽을 수 없는 경우가 많아요.":
+        "'Don't use' is recommended for everyday use. If you get a bot check, first turn off any VPN (Cloudflare WARP, etc.). If you really need cookies, choose Firefox logged in to YouTube. Recent Chrome, Edge and Whale on Windows encrypt their cookies, so they often can't be read.",
     "시작할 때 yt-dlp 자동 업데이트": "Auto-update yt-dlp at startup",
     "유튜브가 바뀌어도 계속 받을 수 있게, 하루에 한 번만 확인해요.": "Checks only once a day so downloads keep working when YouTube changes.",
     "창을 열 때 복사된 유튜브 주소 자동으로 불러오기": "Automatically load a copied YouTube address when the window opens",
