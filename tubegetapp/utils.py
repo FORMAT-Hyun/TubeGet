@@ -6,6 +6,7 @@ import subprocess
 import sys
 from pathlib import Path
 from typing import Optional
+from .i18n import tr
 
 _INVALID_CHARS = re.compile(r'[<>:"/\\|?*\x00-\x1f]')
 _RESERVED = {
@@ -47,7 +48,7 @@ def human_duration(sec: Optional[float]) -> str:
 def human_eta(sec: Optional[float]) -> str:
     if sec is None:
         return ""
-    return f"남은 시간 {human_duration(sec)}"
+    return tr("남은 시간 {human_duration}").format(human_duration=human_duration(sec))
 
 
 def sanitize_filename(name: str, max_len: int = 120) -> str:

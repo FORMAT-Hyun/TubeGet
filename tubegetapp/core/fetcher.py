@@ -12,6 +12,7 @@ from .errors import explain
 from .metadata import parse_info
 from .options import info_args
 from .proc import kill_tree, make_process
+from ..i18n import tr
 
 FETCH_TIMEOUT_MS = 120_000
 
@@ -38,7 +39,7 @@ class InfoFetcher(QObject):
     def fetch(self, url: str, deps: Deps, playlist: bool, cookies_browser: str = "") -> None:
         self.abort()
         if not deps.ytdlp.ok:
-            self.failed.emit("yt-dlp가 설치되어 있지 않아요. [도구 상태]에서 설치해 주세요.", url, "")
+            self.failed.emit(tr("yt-dlp가 설치되어 있지 않아요. [도구 상태]에서 설치해 주세요."), url, "")
             return
         self._url = url
         self._stdout = bytearray()
@@ -77,7 +78,7 @@ class InfoFetcher(QObject):
             self._proc = None
             self._timer.stop()
             proc.deleteLater()
-            self.failed.emit("yt-dlp를 실행하지 못했어요. [도구 상태]에서 다시 설치해 주세요.", self._url, "")
+            self.failed.emit(tr("yt-dlp를 실행하지 못했어요. [도구 상태]에서 다시 설치해 주세요."), self._url, "")
 
     def _on_finished(self, proc: QProcess, code: int) -> None:
         if proc is not self._proc:
@@ -89,7 +90,7 @@ class InfoFetcher(QObject):
         proc.deleteLater()
         err_text = self._stderr.decode("utf-8", "replace")
         if self._timed_out:
-            self._fail("정보를 불러오는 데 너무 오래 걸려요. 인터넷 연결을 확인하고 다시 시도해 주세요.", err_text)
+            self._fail(tr("정보를 불러오는 데 너무 오래 걸려요. 인터넷 연결을 확인하고 다시 시도해 주세요."), err_text)
             return
         out = self._stdout.decode("utf-8", "replace").strip()
         if code != 0 and not out:
@@ -106,13 +107,13 @@ class InfoFetcher(QObject):
                 except ValueError:
                     continue
         if data is None:
-            self._fail(explain(err_text) if err_text.strip() else "정보를 읽지 못했어요.", err_text)
+            self._fail(explain(err_text) if err_text.strip() else tr("정보를 읽지 못했어요."), err_text)
             return
         _save_diag("last_info.json", line)
         try:
             info = parse_info(data)
         except Exception as exc:  # noqa: BLE001
-            self._fail(f"정보를 해석하지 못했어요: {exc}", err_text)
+            self._fail(tr("정보를 해석하지 못했어요: {exc}").format(exc=exc), err_text)
             return
         self.succeeded.emit(info, self._url)
 

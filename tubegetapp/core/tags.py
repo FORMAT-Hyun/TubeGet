@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import re
 from typing import Optional
+from ..i18n import tr
 
 # (Official Video), [MV], (Lyrics), 【Official Audio】 같은 꼬리표
 _TAIL_WORDS = (r"(?:official\s*)?(?:music\s*)?(?:video|audio|mv|m/v|lyrics?|lyric\s*video|visuali[sz]er"
@@ -13,7 +14,7 @@ _SPLIT_RE = re.compile(r"^(.+?)\s+[-–—]\s+(.+)$")
 _TOPIC_RE = re.compile(r"\s*-\s*Topic$")
 
 FIELDS = ["title", "artist", "album", "year"]
-LABELS = {"title": "제목", "artist": "아티스트", "album": "앨범", "year": "연도"}
+LABELS = {"title": tr("제목"), "artist": tr("아티스트"), "album": tr("앨범"), "year": tr("연도")}
 _META_KEY = {"title": "meta_title", "artist": "meta_artist", "album": "meta_album", "year": "meta_date"}
 
 

@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (QCheckBox, QDialog, QDialogButtonBox, QHBoxLayout
 from ..core.metadata import Entry, MediaInfo
 from ..utils import human_duration
 from .widgets import make_button
+from ..i18n import tr
 
 
 def _parse_ranges(text: str, n: int) -> Optional[set[int]]:
@@ -43,7 +44,7 @@ class PlaylistDialog(QDialog):
                  parent: Optional[QWidget] = None):
         super().__init__(parent)
         self.info = info
-        self.setWindowTitle("재생목록에서 선택")
+        self.setWindowTitle(tr("재생목록에서 선택"))
         self.resize(640, 560)
 
         lay = QVBoxLayout(self)
@@ -56,11 +57,11 @@ class PlaylistDialog(QDialog):
         lay.addWidget(self.count_label)
 
         tools = QHBoxLayout()
-        b_all = make_button("전체 선택", ghost=True)
-        b_none = make_button("전체 해제", ghost=True)
+        b_all = make_button(tr("전체 선택"), ghost=True)
+        b_none = make_button(tr("전체 해제"), ghost=True)
         self.range_edit = QLineEdit()
-        self.range_edit.setPlaceholderText("범위 선택 (예: 1-10, 15, 20-)")
-        b_range = make_button("범위 적용")
+        self.range_edit.setPlaceholderText(tr("범위 선택 (예: 1-10, 15, 20-)"))
+        b_range = make_button(tr("범위 적용"))
         tools.addWidget(b_all)
         tools.addWidget(b_none)
         tools.addStretch(1)
@@ -81,21 +82,21 @@ class PlaylistDialog(QDialog):
                 item.setCheckState(Qt.CheckState.Checked)
             else:
                 item.setFlags(Qt.ItemFlag.NoItemFlags)
-                item.setText(text + "   — 볼 수 없음")
+                item.setText(text + tr("   — 볼 수 없음"))
             self.list.addItem(item)
         lay.addWidget(self.list, 1)
 
-        self.cb_folder = QCheckBox("재생목록 이름으로 폴더 만들기")
+        self.cb_folder = QCheckBox(tr("재생목록 이름으로 폴더 만들기"))
         self.cb_folder.setChecked(make_folder)
-        self.cb_number = QCheckBox("파일 이름 앞에 재생목록 번호 붙이기")
+        self.cb_number = QCheckBox(tr("파일 이름 앞에 재생목록 번호 붙이기"))
         self.cb_number.setChecked(numbering)
         lay.addWidget(self.cb_folder)
         lay.addWidget(self.cb_number)
 
         self.box = QDialogButtonBox()
-        self.ok_btn = make_button("선택한 영상 받기", primary=True)
+        self.ok_btn = make_button(tr("선택한 영상 받기"), primary=True)
         self.box.addButton(self.ok_btn, QDialogButtonBox.ButtonRole.AcceptRole)
-        self.box.addButton("취소", QDialogButtonBox.ButtonRole.RejectRole)
+        self.box.addButton(tr("취소"), QDialogButtonBox.ButtonRole.RejectRole)
         self.box.accepted.connect(self.accept)
         self.box.rejected.connect(self.reject)
         lay.addWidget(self.box)
@@ -131,9 +132,9 @@ class PlaylistDialog(QDialog):
     def _update_count(self, *_):
         n = sum(1 for it in self._items() if it.checkState() == Qt.CheckState.Checked)
         total = len(self.info.entries)
-        self.count_label.setText(f"전체 {total}개 중 {n}개 선택")
+        self.count_label.setText(tr("전체 {total}개 중 {n}개 선택").format(total=total, n=n))
         self.ok_btn.setEnabled(n > 0)
-        self.ok_btn.setText(f"선택한 {n}개 받기" if n else "선택한 영상 받기")
+        self.ok_btn.setText(tr("선택한 {n}개 받기").format(n=n) if n else tr("선택한 영상 받기"))
 
     def selected(self) -> list[tuple[int, Entry]]:
         out = []

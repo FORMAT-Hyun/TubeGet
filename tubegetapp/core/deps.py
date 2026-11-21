@@ -12,6 +12,7 @@ from typing import Optional
 
 from ..paths import IS_MAC, IS_WINDOWS, app_root, bin_dir
 from ..utils import no_window_flags
+from ..i18n import tr
 
 EXE = ".exe" if IS_WINDOWS else ""
 
@@ -26,9 +27,9 @@ _CANDIDATES = {
 }
 
 LABELS = {
-    "yt-dlp": "yt-dlp (다운로드 엔진)",
-    "ffmpeg": "ffmpeg (영상·음성 합치기/변환)",
-    "deno": "Deno (유튜브 JS 처리)",
+    "yt-dlp": tr("yt-dlp (다운로드 엔진)"),
+    "ffmpeg": tr("ffmpeg (영상·음성 합치기/변환)"),
+    "deno": tr("Deno (유튜브 JS 처리)"),
 }
 
 
@@ -211,5 +212,5 @@ def download_spec(name: str) -> Optional[dict]:
 
 
 MANUAL_HINTS = {
-    "ffmpeg": "macOS 는 터미널에서 'brew install ffmpeg' 로 설치해 주세요.",
+    "ffmpeg": tr("macOS 는 터미널에서 'brew install ffmpeg' 로 설치해 주세요."),
 }

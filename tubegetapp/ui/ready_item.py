@@ -13,6 +13,7 @@ from . import icons
 from .theme import repolish
 from .tag_dialog import TagState
 from .widgets import ThumbLoader, icon_button, make_button, rounded
+from ..i18n import tr
 
 THUMB_SIZE = QSize(160, 90)
 
@@ -40,7 +41,7 @@ class ReadyItem(QFrame):
         row.setContentsMargins(14, 14, 14, 14)
         row.setSpacing(16)
 
-        self.thumb = QLabel("미리보기")
+        self.thumb = QLabel(tr("미리보기"))
         self.thumb.setObjectName("Thumb")
         self.thumb.setFixedSize(THUMB_SIZE)
         self.thumb.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -62,7 +63,7 @@ class ReadyItem(QFrame):
         self.v_notice.setWordWrap(True)
         self.v_notice.setVisible(False)
         col.addWidget(self.v_notice)
-        self.b_load_playlist = make_button("이 주소의 재생목록 전체 불러오기 →", link=True)
+        self.b_load_playlist = make_button(tr("이 주소의 재생목록 전체 불러오기 →"), link=True)
         self.b_load_playlist.setVisible(False)
         self.b_load_playlist.clicked.connect(lambda: self.loadPlaylistRequested.emit(self))
         col.addWidget(self.b_load_playlist, 0, Qt.AlignmentFlag.AlignLeft)
@@ -71,7 +72,7 @@ class ReadyItem(QFrame):
 
         right = QVBoxLayout()
         right.setSpacing(8)
-        self.b_close = icon_button("close", "목록에서 지우기", color="#9aa0aa", size=14, box=28)
+        self.b_close = icon_button("close", tr("목록에서 지우기"), color="#9aa0aa", size=14, box=28)
         self.b_close.clicked.connect(lambda: self.removeRequested.emit(self))
         right.addWidget(self.b_close, 0, Qt.AlignmentFlag.AlignRight)
         right.addStretch(1)
@@ -79,7 +80,7 @@ class ReadyItem(QFrame):
         self.est_label.setObjectName("Muted")
         self.est_label.setAlignment(Qt.AlignmentFlag.AlignRight)
         right.addWidget(self.est_label)
-        self.b_download = make_button("다운로드", primary=True)
+        self.b_download = make_button(tr("다운로드"), primary=True)
         self.b_download.setIcon(icons.icon("download", "#ffffff", 18))
         self.b_download.setIconSize(QSize(18, 18))
         self.b_download.setMinimumSize(150, 40)
@@ -95,25 +96,25 @@ class ReadyItem(QFrame):
         bits: list[tuple[str, bool]] = []
         if info.kind == "playlist":
             n_ok = sum(1 for e in info.entries if e.available)
-            bits = [("재생목록", False)]
+            bits = [(tr("재생목록"), False)]
             if info.uploader:
                 bits.append((info.uploader, False))
-            bits.append((f"영상 {len(info.entries)}개", False))
-            self.b_download.setText(f"재생목록에서 선택… ({n_ok})")
+            bits.append((tr("영상 {len}개").format(len=len(info.entries)), False))
+            self.b_download.setText(tr("재생목록에서 선택… ({n_ok})").format(n_ok=n_ok))
             if n_ok < len(info.entries):
-                self.v_notice.setText(f"비공개·삭제된 영상 {len(info.entries) - n_ok}개는 건너뛰어요.")
+                self.v_notice.setText(tr("비공개·삭제된 영상 {v}개는 건너뛰어요.").format(v=len(info.entries) - n_ok))
                 self.v_notice.setVisible(True)
         else:
             if info.uploader:
                 bits.append((info.uploader, False))
             if info.heights:
-                bits.append((f"최대 {height_label(info.heights[0])}", True))
+                bits.append((tr("최대 {height_label}").format(height_label=height_label(info.heights[0])), True))
             if info.subtitles:
-                bits.append((f"자막 {len(info.subtitles)}개", False))
+                bits.append((tr("자막 {len}개").format(len=len(info.subtitles)), False))
             if len(info.dubs) > 1:
-                bits.append((f"더빙 {len(info.dubs)}개", False))
+                bits.append((tr("더빙 {len}개").format(len=len(info.dubs)), False))
             if info.is_live:
-                self.v_notice.setText("라이브 방송이나 예정된 최초 공개는 받을 수 없어요. 방송이 끝난 뒤 다시 시도해 주세요.")
+                self.v_notice.setText(tr("라이브 방송이나 예정된 최초 공개는 받을 수 없어요. 방송이 끝난 뒤 다시 시도해 주세요."))
                 self.v_notice.setVisible(True)
             if has_playlist_param(self.url):
                 self.b_load_playlist.setVisible(True)
@@ -140,10 +141,10 @@ class ReadyItem(QFrame):
         info = self.info
         if info.kind == "playlist":
             n = sum(1 for e in info.entries if e.available)
-            self.est_label.setText(f"받을 수 있는 영상 {n}개")
+            self.est_label.setText(tr("받을 수 있는 영상 {n}개").format(n=n))
             return
         size = info.estimated_size(0, "audio") if mode == "audio" else info.estimated_size(height)
-        self.est_label.setText(f"예상 크기 ≈ {human_size(size)}" if size else "")
+        self.est_label.setText(tr("예상 크기 ≈ {human_size}").format(human_size=human_size(size)) if size else "")
 
     def set_selected(self, on: bool) -> None:
         if bool(self.property("selected")) != on:

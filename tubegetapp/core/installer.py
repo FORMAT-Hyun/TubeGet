@@ -17,6 +17,7 @@ from .. import APP_NAME, APP_VERSION
 from ..paths import IS_WINDOWS, bin_dir
 from .deps import Deps, check_all, download_spec
 from .proc import LineBuffer, make_process
+from ..i18n import tr
 
 
 class DepsChecker(QThread):
@@ -56,26 +57,26 @@ class DepInstaller(QThread):
                 break
             spec = download_spec(name)
             if spec is None:
-                failed.append(f"{name}: 이 운영체제에서는 자동 설치를 지원하지 않아요")
+                failed.append(tr("{name}: 이 운영체제에서는 자동 설치를 지원하지 않아요").format(name=name))
                 continue
             try:
-                self.message.emit(f"{name} 내려받는 중…")
+                self.message.emit(tr("{name} 내려받는 중…").format(name=name))
                 self._install(name, spec)
                 installed.append(name)
-                self.message.emit(f"{name} 설치 완료")
+                self.message.emit(tr("{name} 설치 완료").format(name=name))
             except InstallCanceled:
-                failed.append(f"{name}: 취소됨")
+                failed.append(tr("{name}: 취소됨").format(name=name))
                 break
             except Exception as exc:  # noqa: BLE001
                 failed.append(f"{name}: {exc}")
-                self.message.emit(f"{name} 설치 실패: {exc}")
+                self.message.emit(tr("{name} 설치 실패: {exc}").format(name=name, exc=exc))
         ok = not failed
         summary = []
         if installed:
-            summary.append("설치됨: " + ", ".join(installed))
+            summary.append(tr("설치됨: ") + ", ".join(installed))
         if failed:
-            summary.append("실패: " + " / ".join(failed))
-        self.result.emit(ok, "\n".join(summary) or "변경 없음")
+            summary.append(tr("실패: ") + " / ".join(failed))
+        self.result.emit(ok, "\n".join(summary) or tr("변경 없음"))
 
     # ------------------------------------------------------------------
     def _download(self, name: str, url: str, dest: Path) -> None:
@@ -94,7 +95,7 @@ class DepInstaller(QThread):
                 done += len(chunk)
                 self.progress.emit(name, done, total)
         if total and done < total:
-            raise IOError("다운로드가 중간에 끊겼어요")
+            raise IOError(tr("다운로드가 중간에 끊겼어요"))
 
     def _install(self, name: str, spec: dict) -> None:
         target_dir = bin_dir()
@@ -104,7 +105,7 @@ class DepInstaller(QThread):
             fname = PurePosixPath(spec["url"]).name
             downloaded = tmp_path / fname
             self._download(name, spec["url"], downloaded)
-            self.message.emit(f"{name} 설치하는 중…")
+            self.message.emit(tr("{name} 설치하는 중…").format(name=name))
 
             if archive is None:
                 _place(downloaded, target_dir / spec["save_as"])
@@ -137,7 +138,7 @@ class DepInstaller(QThread):
                             extracted[base] = p
             missing = [m for m in members if m not in extracted]
             if missing:
-                raise IOError("압축 파일에서 " + ", ".join(missing) + " 을(를) 찾지 못했어요")
+                raise IOError(tr("압축 파일에서 {names} 을(를) 찾지 못했어요").format(names=", ".join(missing)))
             for base, p in extracted.items():
                 _place(p, target_dir / base)
 
@@ -180,7 +181,7 @@ class YtdlpUpdater(QObject):
         proc.setProcessChannelMode(proc.ProcessChannelMode.MergedChannels)
         proc.readyReadStandardOutput.connect(self._on_out)
         proc.finished.connect(self._on_finished)
-        proc.errorOccurred.connect(lambda e: e == proc.ProcessError.FailedToStart and self.done.emit(False, "실행 실패"))
+        proc.errorOccurred.connect(lambda e: e == proc.ProcessError.FailedToStart and self.done.emit(False, tr("실행 실패")))
         self._proc = proc
         proc.start()
 

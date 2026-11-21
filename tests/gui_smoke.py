@@ -9,6 +9,7 @@ from pathlib import Path
 
 home = tempfile.mkdtemp(prefix="tubeget-gui-")
 os.environ["TUBEGET_HOME"] = home
+os.environ.setdefault("TUBEGET_LANG", "ko")   # 화면 글 비교는 한국어 기준
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 

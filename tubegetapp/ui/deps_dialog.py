@@ -12,6 +12,7 @@ from ..core.installer import DepInstaller, DepsChecker, YtdlpUpdater
 from ..paths import bin_dir, data_dir
 from ..utils import human_size, reveal_in_explorer
 from .widgets import make_button
+from ..i18n import tr
 
 
 class DepsDialog(QDialog):
@@ -19,7 +20,7 @@ class DepsDialog(QDialog):
 
     def __init__(self, deps: Optional[Deps], parent: Optional[QWidget] = None, intro: str = ""):
         super().__init__(parent)
-        self.setWindowTitle("도구 상태")
+        self.setWindowTitle(tr("도구 상태"))
         self.resize(640, 470)
         self.deps = deps or Deps()
         self._installer: Optional[DepInstaller] = None
@@ -33,7 +34,7 @@ class DepsDialog(QDialog):
             t.setObjectName("Notice")
             t.setWordWrap(True)
             lay.addWidget(t)
-        desc = QLabel("TubeGet은 아래 도구들을 사용해요. 없는 도구는 버튼 한 번으로 TubeGet 전용 폴더에 설치할 수 있어요.")
+        desc = QLabel(tr("TubeGet은 아래 도구들을 사용해요. 없는 도구는 버튼 한 번으로 TubeGet 전용 폴더에 설치할 수 있어요."))
         desc.setObjectName("Muted")
         desc.setWordWrap(True)
         lay.addWidget(desc)
@@ -44,7 +45,7 @@ class DepsDialog(QDialog):
         self.rows: dict[str, tuple[QLabel, QLabel]] = {}
         for r, key in enumerate(("yt-dlp", "ffmpeg", "deno")):
             name = QLabel(LABELS[key])
-            status = QLabel("확인 중…")
+            status = QLabel(tr("확인 중…"))
             where = QLabel("")
             where.setObjectName("Small")
             where.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
@@ -56,12 +57,12 @@ class DepsDialog(QDialog):
         lay.addLayout(self.grid)
 
         btns = QHBoxLayout()
-        self.b_install = make_button("없는 도구 설치", primary=True)
-        self.b_update = make_button("yt-dlp 업데이트")
-        self.b_recheck = make_button("다시 확인", ghost=True)
-        self.b_folder = make_button("설치 폴더 열기", ghost=True)
-        self.b_diag = make_button("진단 정보 폴더", ghost=True,
-                                  tooltip="마지막으로 불러온 영상 정보(last_info.json)와 오류(last_error.txt)가 있어요")
+        self.b_install = make_button(tr("없는 도구 설치"), primary=True)
+        self.b_update = make_button(tr("yt-dlp 업데이트"))
+        self.b_recheck = make_button(tr("다시 확인"), ghost=True)
+        self.b_folder = make_button(tr("설치 폴더 열기"), ghost=True)
+        self.b_diag = make_button(tr("진단 정보 폴더"), ghost=True,
+                                  tooltip=tr("마지막으로 불러온 영상 정보(last_info.json)와 오류(last_error.txt)가 있어요"))
         btns.addWidget(self.b_install)
         btns.addWidget(self.b_update)
         btns.addStretch(1)
@@ -79,7 +80,7 @@ class DepsDialog(QDialog):
         self.log.setMaximumBlockCount(500)
         lay.addWidget(self.log, 1)
 
-        close = make_button("닫기")
+        close = make_button(tr("닫기"))
         close.clicked.connect(self.accept)
         row = QHBoxLayout()
         row.addStretch(1)
@@ -104,12 +105,12 @@ class DepsDialog(QDialog):
                 ver = tool.version or "?"
                 label = f"✔  {ver}"
                 if key == "deno" and tool.name != "deno":
-                    label = f"✔  {tool.name} {ver} (대신 사용)"
+                    label = tr("✔  {name} {ver} (대신 사용)").format(name=tool.name, ver=ver)
                 status.setText(label)
                 status.setObjectName("Success")
-                where.setText(("TubeGet 전용: " if tool.managed else "시스템: ") + tool.path)
+                where.setText((tr("TubeGet 전용: ") if tool.managed else tr("시스템: ")) + tool.path)
             else:
-                status.setText("✖  없음")
+                status.setText(tr("✖  없음"))
                 status.setObjectName("Error")
                 hint = MANUAL_HINTS.get(key, "") if download_spec(key) is None else ""
                 where.setText(hint)
@@ -118,7 +119,7 @@ class DepsDialog(QDialog):
         missing = d.missing_required()
         busy = self._busy()
         self.b_install.setEnabled(bool(missing) and not busy)
-        self.b_install.setText("없는 도구 설치" + (f" ({', '.join(missing)})" if missing else ""))
+        self.b_install.setText(tr("없는 도구 설치") + (f" ({', '.join(missing)})" if missing else ""))
         self.b_update.setEnabled(d.ytdlp.ok and not busy)
         self.b_recheck.setEnabled(not busy)
 
@@ -133,7 +134,7 @@ class DepsDialog(QDialog):
         names = names or self.deps.missing_required()
         names = [n for n in names if download_spec(n) is not None]
         if not names:
-            self._append("자동으로 설치할 수 있는 도구가 없어요.")
+            self._append(tr("자동으로 설치할 수 있는 도구가 없어요."))
             return
         self._installer = DepInstaller(names, self)
         self._installer.progress.connect(self._on_progress)
@@ -165,10 +166,10 @@ class DepsDialog(QDialog):
         if not tool.ok:
             return
         if not tool.managed:
-            self._append("시스템에 설치된 yt-dlp를 쓰고 있어요. 항상 최신으로 유지되도록 TubeGet 전용 yt-dlp를 설치할게요.")
+            self._append(tr("시스템에 설치된 yt-dlp를 쓰고 있어요. 항상 최신으로 유지되도록 TubeGet 전용 yt-dlp를 설치할게요."))
             self.install_missing(["yt-dlp"])
             return
-        self._append("yt-dlp 업데이트 확인 중…")
+        self._append(tr("yt-dlp 업데이트 확인 중…"))
         self._updater = YtdlpUpdater(tool.path, self)
         self._updater.output.connect(self._append)
         self._updater.done.connect(self._on_update_done)
@@ -178,7 +179,7 @@ class DepsDialog(QDialog):
         self._updater.start()
 
     def _on_update_done(self, ok: bool, last: str) -> None:
-        self._append("업데이트 완료" if ok else "업데이트 실패 - 로그를 확인해 주세요")
+        self._append(tr("업데이트 완료") if ok else tr("업데이트 실패 - 로그를 확인해 주세요"))
         self._updater.deleteLater()
         self._updater = None
         self.bar.setVisible(False)

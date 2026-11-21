@@ -11,6 +11,7 @@ from pathlib import Path
 
 home = tempfile.mkdtemp(prefix="tubeget-tag-")
 os.environ["TUBEGET_HOME"] = home
+os.environ.setdefault("TUBEGET_LANG", "ko")   # 화면 글 비교는 한국어 기준
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 base, srv, shots = sys.argv[1].rstrip("/"), sys.argv[2], Path(sys.argv[3])

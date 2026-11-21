@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Optional
+from ..i18n import tr
 
 
 @dataclass
@@ -106,13 +107,13 @@ def _sub_names(raw) -> dict[str, str]:
 
 def parse_info(data: dict) -> MediaInfo:
     if not isinstance(data, dict):
-        raise ValueError("잘못된 정보 형식")
+        raise ValueError(tr("잘못된 정보 형식"))
 
     if data.get("_type") in ("playlist", "multi_video"):
         info = MediaInfo(
             kind="playlist",
             id=str(data.get("id") or ""),
-            title=data.get("title") or data.get("id") or "재생목록",
+            title=data.get("title") or data.get("id") or tr("재생목록"),
             uploader=data.get("uploader") or data.get("channel") or "",
             thumbnail=pick_thumbnail(data),
             url=data.get("webpage_url") or data.get("original_url") or "",
@@ -125,7 +126,7 @@ def parse_info(data: dict) -> MediaInfo:
             if raw.get("_type") == "playlist" or ie == "youtubetab":
                 tabs += 1
                 continue
-            title = raw.get("title") or raw.get("id") or "(제목 없음)"
+            title = raw.get("title") or raw.get("id") or tr("(제목 없음)")
             url = _entry_url(raw)
             if not url:
                 continue
@@ -147,7 +148,7 @@ def parse_info(data: dict) -> MediaInfo:
     info = MediaInfo(
         kind="video",
         id=str(data.get("id") or ""),
-        title=data.get("title") or data.get("id") or "(제목 없음)",
+        title=data.get("title") or data.get("id") or tr("(제목 없음)"),
         uploader=data.get("uploader") or data.get("channel") or "",
         duration=data.get("duration"),
         thumbnail=pick_thumbnail(data),

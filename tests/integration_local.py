@@ -9,6 +9,7 @@ import tempfile
 from pathlib import Path
 
 home = os.environ.get("TUBEGET_HOME") or tempfile.mkdtemp(prefix="tubeget-it-")
+os.environ.setdefault("TUBEGET_LANG", "ko")   # 화면 글 비교는 한국어 기준
 os.environ["TUBEGET_HOME"] = home
 USE_EXISTING = os.environ.get("USE_EXISTING_BIN") == "1"
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))

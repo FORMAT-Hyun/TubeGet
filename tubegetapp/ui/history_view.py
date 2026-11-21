@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (QHBoxLayout, QHeaderView, QLabel, QMenu, QMessage
 from ..core.history import History
 from ..utils import reveal_in_explorer
 from .widgets import make_button
+from ..i18n import tr
 
 
 class HistoryView(QWidget):
@@ -29,13 +30,13 @@ class HistoryView(QWidget):
         self.count.setObjectName("Muted")
         top.addWidget(self.count)
         top.addStretch(1)
-        clear = make_button("기록 모두 지우기", ghost=True)
+        clear = make_button(tr("기록 모두 지우기"), ghost=True)
         clear.clicked.connect(self._clear)
         top.addWidget(clear)
         lay.addLayout(top)
 
         self.tree = QTreeWidget()
-        self.tree.setHeaderLabels(["제목", "형식", "결과", "날짜"])
+        self.tree.setHeaderLabels([tr("제목"), tr("형식"), tr("결과"), tr("날짜")])
         self.tree.setRootIsDecorated(False)
         self.tree.setAlternatingRowColors(True)
         self.tree.setUniformRowHeights(True)
@@ -57,14 +58,14 @@ class HistoryView(QWidget):
             except ValueError:
                 when = ""
             item = QTreeWidgetItem([rec.get("title", ""), rec.get("summary", ""),
-                                    "완료" if rec.get("ok") else "실패", when])
+                                    tr("완료") if rec.get("ok") else tr("실패"), when])
             item.setData(0, Qt.ItemDataRole.UserRole, rec)
             item.setToolTip(0, rec.get("filepath") or rec.get("error") or rec.get("url", ""))
             if not rec.get("ok"):
                 item.setForeground(2, QColor("#ff6b6b"))
                 item.setToolTip(2, rec.get("error", ""))
             self.tree.addTopLevelItem(item)
-        self.count.setText(f"최근 기록 {len(self.history.items)}개 · 두 번 클릭하면 파일이 열려요")
+        self.count.setText(tr("최근 기록 {len}개 · 두 번 클릭하면 파일이 열려요").format(len=len(self.history.items)))
 
     def add(self, rec: dict) -> None:
         self.reload()
@@ -80,7 +81,7 @@ class HistoryView(QWidget):
         if path and os.path.exists(path):
             QDesktopServices.openUrl(QUrl.fromLocalFile(path))
         elif rec.get("ok"):
-            QMessageBox.information(self, "파일 없음", "파일이 옮겨졌거나 삭제됐어요.")
+            QMessageBox.information(self, tr("파일 없음"), tr("파일이 옮겨졌거나 삭제됐어요."))
 
     def _menu(self, pos: QPoint) -> None:
         item = self.tree.itemAt(pos)
@@ -90,15 +91,15 @@ class HistoryView(QWidget):
         m = QMenu(self)
         path = rec.get("filepath")
         exists = bool(path) and os.path.exists(path)
-        a_open = m.addAction("파일 열기")
+        a_open = m.addAction(tr("파일 열기"))
         a_open.setEnabled(exists)
-        a_reveal = m.addAction("폴더에서 보기")
+        a_reveal = m.addAction(tr("폴더에서 보기"))
         a_reveal.setEnabled(exists)
         m.addSeparator()
-        a_again = m.addAction("다시 받기")
-        a_copy = m.addAction("주소 복사")
+        a_again = m.addAction(tr("다시 받기"))
+        a_copy = m.addAction(tr("주소 복사"))
         m.addSeparator()
-        a_del = m.addAction("기록에서 지우기")
+        a_del = m.addAction(tr("기록에서 지우기"))
         act = m.exec(self.tree.viewport().mapToGlobal(pos))
         if act is a_open:
             self._open(item)
@@ -115,7 +116,7 @@ class HistoryView(QWidget):
     def _clear(self) -> None:
         if not self.history.items:
             return
-        if QMessageBox.question(self, "기록 지우기", "다운로드 기록을 모두 지울까요? (파일은 지워지지 않아요)") \
+        if QMessageBox.question(self, tr("기록 지우기"), tr("다운로드 기록을 모두 지울까요? (파일은 지워지지 않아요)")) \
                 == QMessageBox.StandardButton.Yes:
             self.history.clear()
             self.reload()

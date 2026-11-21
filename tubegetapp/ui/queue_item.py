@@ -16,6 +16,7 @@ from ..utils import human_duration, human_size, reveal_in_explorer
 from . import icons
 from .theme import SURFACE2, repolish
 from .widgets import ElidedLabel, ThumbLoader, icon_button, make_button, rounded, show_log_dialog
+from ..i18n import tr
 
 THUMB = QSize(72, 40)
 FRESH_MS = 9000        # 방금 끝난 항목을 연한 노란 테두리로 보여주는 시간
@@ -51,7 +52,7 @@ def format_bits(job: DownloadJob) -> list[str]:
         if q.endswith("K") and o.audio_format in ("mp3", "m4a", "opus"):
             bits.append(q[:-1].lstrip("0") + "k")
     else:
-        bits.append(height_label(o.max_height).split(" ")[0] if o.max_height else "최고 화질")
+        bits.append(height_label(o.max_height).split(" ")[0] if o.max_height else tr("최고 화질"))
         bits.append(o.container.upper())
     return bits
 
@@ -72,7 +73,7 @@ def done_meta(job: DownloadJob) -> str:
     if folder:
         bits.append(folder)
     if job.skipped:
-        bits.insert(0, "이미 받은 파일이라 건너뛰었어요")
+        bits.insert(0, tr("이미 받은 파일이라 건너뛰었어요"))
     return " · ".join(bits)
 
 
@@ -117,11 +118,11 @@ class QueueItemWidget(QFrame):
 
         btns = QHBoxLayout()
         btns.setSpacing(0)
-        self.btn_overwrite = make_button("덮어쓰기", ghost=True, tooltip="기존 파일을 덮어쓰고 새로 받기")
-        self.btn_retry = icon_button("retry", "다시 시도 (받던 부분부터 이어받기)")
-        self.btn_cancel = icon_button("close", "다운로드 취소")
-        self.btn_open = icon_button("folder", "파일 위치 열기")
-        self.btn_more = icon_button("kebab", "더 보기")
+        self.btn_overwrite = make_button(tr("덮어쓰기"), ghost=True, tooltip=tr("기존 파일을 덮어쓰고 새로 받기"))
+        self.btn_retry = icon_button("retry", tr("다시 시도 (받던 부분부터 이어받기)"))
+        self.btn_cancel = icon_button("close", tr("다운로드 취소"))
+        self.btn_open = icon_button("folder", tr("파일 위치 열기"))
+        self.btn_more = icon_button("kebab", tr("더 보기"))
         for b in (self.btn_overwrite, self.btn_retry, self.btn_cancel, self.btn_open, self.btn_more):
             btns.addWidget(b, 0, Qt.AlignmentFlag.AlignVCenter)
         root.addLayout(btns)
@@ -158,18 +159,18 @@ class QueueItemWidget(QFrame):
         j = self.job
         m = QMenu(self)
         if j.state == DONE:
-            m.addAction("파일 위치 열기", self._open)
+            m.addAction(tr("파일 위치 열기"), self._open)
             if j.skipped:
-                m.addAction("덮어쓰고 다시 받기", lambda: self.overwriteRequested.emit(j))
+                m.addAction(tr("덮어쓰고 다시 받기"), lambda: self.overwriteRequested.emit(j))
         if j.state in (FAILED, CANCELED):
-            m.addAction("다시 시도", lambda: self.retryRequested.emit(j))
+            m.addAction(tr("다시 시도"), lambda: self.retryRequested.emit(j))
         if j.state in (QUEUED, RUNNING):
-            m.addAction("취소", j.cancel)
+            m.addAction(tr("취소"), j.cancel)
         if j.log:
-            m.addAction("로그 보기", lambda: show_log_dialog(self, f"로그 - {j.title}", list(j.log)))
+            m.addAction(tr("로그 보기"), lambda: show_log_dialog(self, tr("로그 - {title}").format(title=j.title), list(j.log)))
         if j.state != RUNNING:
             m.addSeparator()
-            m.addAction("목록에서 지우기", lambda: self.removeRequested.emit(j))
+            m.addAction(tr("목록에서 지우기"), lambda: self.removeRequested.emit(j))
         pos = self.btn_more.mapToGlobal(QPoint(self.btn_more.width() - 4, self.btn_more.height() - 2))
         # 오른쪽 끝에 맞춰 왼쪽으로 펼치기
         m.exec(pos - QPoint(m.sizeHint().width(), 0))
@@ -189,11 +190,11 @@ class QueueItemWidget(QFrame):
             text = done_meta(j)
             style = "Notice" if j.skipped else "Small"
         elif state == FAILED:
-            text, style = (j.error or j.detail or "실패"), "Error"
+            text, style = (j.error or j.detail or tr("실패")), "Error"
         elif state == CANCELED:
-            text, style = j.detail or "취소됨", "Small"
+            text, style = j.detail or tr("취소됨"), "Small"
         elif state == QUEUED:
-            text, style = f"대기 중 · {' · '.join(format_bits(j))}", "Small"
+            text, style = tr("대기 중 · {join}").format(join=' · '.join(format_bits(j))), "Small"
         else:
             text, style = j.detail, "Small"
         self.meta.setText(text)

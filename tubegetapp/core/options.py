@@ -8,18 +8,19 @@ from ..utils import format_timecode, sanitize_filename
 from . import tags
 from .deps import Deps
 from .progress import PRINT_ARGS, PROGRESS_TEMPLATE
+from ..i18n import tr
 
 VIDEO_CONTAINERS = ["mp4", "mkv", "webm"]
 AUDIO_FORMATS = [
     ("mp3", "MP3"),
     ("m4a", "M4A (AAC)"),
     ("opus", "Opus"),
-    ("flac", "FLAC (무손실)"),
-    ("wav", "WAV (무압축)"),
-    ("best", "원본 그대로"),
+    ("flac", tr("FLAC (무손실)")),
+    ("wav", tr("WAV (무압축)")),
+    ("best", tr("원본 그대로")),
 ]
 AUDIO_QUALITIES = [
-    ("0", "최고 (VBR)"),
+    ("0", tr("최고 (VBR)")),
     ("320K", "320 kbps"),
     ("192K", "192 kbps"),
     ("128K", "128 kbps"),
@@ -95,39 +96,39 @@ class DownloadOptions:
     def subs_summary(self) -> str:
         if not self.has_subs:
             return ""
-        mode = {"embed": "넣기", "file": "파일", "both": "넣기+파일"}.get(self.effective_sub_mode(), "")
-        return f"자막 {self.sub_langs} ({mode})"
+        mode = {"embed": tr("넣기"), "file": tr("파일"), "both": tr("넣기+파일")}.get(self.effective_sub_mode(), "")
+        return tr("자막 {sub_langs} ({mode})").format(sub_langs=self.sub_langs, mode=mode)
 
     def summary(self) -> str:
         """큐에 표시할 짧은 설명."""
         if self.mode == "audio":
             label = dict(AUDIO_FORMATS).get(self.audio_format, self.audio_format)
-            text = f"음원 · {label}"
+            text = tr("음원 · {label}").format(label=label)
             if not self.audio_tags:
-                text += " · 태그 끔"
+                text += tr(" · 태그 끔")
             elif self.tag_values:
-                text += " · 태그 편집"
+                text += tr(" · 태그 편집")
             elif self.tag_smart:
-                text += " · 태그 자동정리"
+                text += tr(" · 태그 자동정리")
             if self.has_dub:
-                text += f" · 더빙 {self.dub_lang}"
+                text += tr(" · 더빙 {dub_lang}").format(dub_lang=self.dub_lang)
             if self.has_subs:
                 text += " · " + self.subs_summary()
         else:
-            q = height_label(self.max_height) if self.max_height else "최고 화질"
-            text = f"영상 · {q} · {self.container.upper()}"
+            q = height_label(self.max_height) if self.max_height else tr("최고 화질")
+            text = tr("영상 · {q} · {upper}").format(q=q, upper=self.container.upper())
             if self.compat_h264:
                 text += " · H.264"
             if not self.embed_metadata:
-                text += " · 태그 끔"
+                text += tr(" · 태그 끔")
             elif self.tag_values:
-                text += " · 태그 편집"
+                text += tr(" · 태그 편집")
             if self.has_dub:
-                text += f" · 더빙 {self.dub_lang}"
+                text += tr(" · 더빙 {dub_lang}").format(dub_lang=self.dub_lang)
             if self.has_subs:
                 text += " · " + self.subs_summary()
         if self.section_start is not None or self.section_end is not None:
-            text += " · 구간"
+            text += tr(" · 구간")
         return text
 
     def output_template(self) -> str:
@@ -135,7 +136,7 @@ class DownloadOptions:
         if self.section_start is not None or self.section_end is not None:
             stem, dot, ext = template.rpartition(".")
             if dot and "%(ext)s" in ext:
-                template = f"{stem} (구간 %(section_start)d-%(section_end)d).{ext}"
+                template = tr("{stem} (구간 %(section_start)d-%(section_end)d).{ext}").format(stem=stem, ext=ext)
         if self.index is not None:
             template = f"{self.index:0{max(self.index_width, 2)}d} - {template}"
         if self.subfolder:

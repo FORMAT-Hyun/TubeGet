@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (QAbstractButton, QButtonGroup, QCheckBox, QComboB
 from .. import APP_NAME, APP_VERSION
 from . import icons
 from .theme import ACCENT, DISABLED, ICON, MUTED, SURFACE2, TEXT
+from ..i18n import tr
 
 
 class ElidedLabel(QLabel):
@@ -422,11 +423,11 @@ def show_log_dialog(parent: QWidget, title: str, lines: list[str]) -> None:
     lay = QVBoxLayout(dlg)
     text = QPlainTextEdit()
     text.setReadOnly(True)
-    text.setPlainText("\n".join(lines) or "(로그 없음)")
+    text.setPlainText("\n".join(lines) or tr("(로그 없음)"))
     text.moveCursor(text.textCursor().MoveOperation.End)
     lay.addWidget(text)
     box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
-    copy = box.addButton("복사", QDialogButtonBox.ButtonRole.ActionRole)
+    copy = box.addButton(tr("복사"), QDialogButtonBox.ButtonRole.ActionRole)
     copy.clicked.connect(lambda: (text.selectAll(), text.copy()))
     box.rejected.connect(dlg.reject)
     lay.addWidget(box)

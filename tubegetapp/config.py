@@ -6,17 +6,18 @@ from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 
 from .paths import data_dir, default_download_dir
+from .i18n import AUTO, LANGUAGES, tr
 
 FILENAME_PRESETS = {
-    "제목 [영상ID]": "%(title)s [%(id)s].%(ext)s",
-    "제목": "%(title)s.%(ext)s",
-    "채널 - 제목": "%(uploader)s - %(title)s.%(ext)s",
-    "업로드 날짜 제목": "%(upload_date>%Y-%m-%d)s %(title)s.%(ext)s",
+    tr("제목 [영상ID]"): "%(title)s [%(id)s].%(ext)s",
+    tr("제목"): "%(title)s.%(ext)s",
+    tr("채널 - 제목"): "%(uploader)s - %(title)s.%(ext)s",
+    tr("업로드 날짜 제목"): "%(upload_date>%Y-%m-%d)s %(title)s.%(ext)s",
 }
 
 COOKIE_BROWSERS = [
-    ("", "사용 안 함"),
-    ("firefox", "Firefox (가장 잘 됨)"),
+    ("", tr("사용 안 함")),
+    ("firefox", tr("Firefox (가장 잘 됨)")),
     ("chrome", "Chrome"),
     ("edge", "Edge"),
     ("whale", "Whale"),
@@ -30,6 +31,7 @@ COOKIE_BROWSERS = [
 
 @dataclass
 class Settings:
+    language: str = "auto"         # auto(시스템 언어) | ko | en  (바꾸면 다시 시작해야 적용)
     download_dir: str = field(default_factory=lambda: str(default_download_dir()))
     max_concurrent: int = 2
 
@@ -53,7 +55,7 @@ class Settings:
     audio_tags_default: bool = True      # 음원 태그 기본으로 넣기
     audio_tag_clean: bool = True         # 음원 태그 자동 정리 ('아티스트 - 곡명' 나누기, 꼬리표 지우기)
     delete_partials_on_remove: bool = True
-    filename_template: str = FILENAME_PRESETS["제목 [영상ID]"]
+    filename_template: str = FILENAME_PRESETS[tr("제목 [영상ID]")]
     cookies_browser: str = ""
     rate_limit: str = ""
     playlist_folder: bool = True
@@ -95,6 +97,8 @@ class Settings:
                     value = str(value)
                 setattr(s, f.name, value)
         s.max_concurrent = min(max(s.max_concurrent, 1), 5)
+        if s.language != AUTO and s.language not in LANGUAGES:
+            s.language = AUTO
         if s.mode not in ("video", "audio"):
             s.mode = "video"
         if s.sub_mode not in ("embed", "file", "both"):

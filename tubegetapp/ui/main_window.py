@@ -41,6 +41,7 @@ from .theme import BORDER, DANGER, ICON, MUTED, WARNING, app_icon, repolish
 from .toast import ToastManager
 from .widgets import (ChipButton, ChipCombo, ElidedLabel, ModeCombo, ThumbLoader, ToggleSwitch, field_label,
                       icon_button, make_button, rounded, show_log_dialog)
+from ..i18n import current_language, resolve, tr
 
 THUMB_SIZE = QSize(176, 99)
 _CHANNEL_RE = re.compile(r"youtube\.com/(?:@[^/?#]+|channel/[^/?#]+|c/[^/?#]+|user/[^/?#]+)/?(?:[?#].*)?$",
@@ -127,24 +128,24 @@ class MainWindow(QMainWindow):
         bl.setContentsMargins(16, 12, 14, 12)
         bl.setSpacing(4)
 
-        self.b_paste = QPushButton("  링크 붙여넣기")
+        self.b_paste = QPushButton(tr("  링크 붙여넣기"))
         self.b_paste.setProperty("primary", True)
         self.b_paste.setIcon(icons.icon("link_play", "#ffffff", 22))
         self.b_paste.setIconSize(QSize(22, 22))
         self.b_paste.setMinimumHeight(40)
         self.b_paste.setMinimumWidth(158)
         self.b_paste.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.b_paste.setToolTip("복사해 둔 주소를 붙여넣고 영상 정보를 불러와요 (Ctrl+L: 직접 입력)")
+        self.b_paste.setToolTip(tr("복사해 둔 주소를 붙여넣고 영상 정보를 불러와요 (Ctrl+L: 직접 입력)"))
         self.b_paste.clicked.connect(self._paste)
         bl.addWidget(self.b_paste)
         bl.addSpacing(10)
 
         self.auto_toggle = ToggleSwitch()
-        self.auto_toggle.setToolTip("바로 받기\n켜면 링크를 붙여넣자마자 지금 고른 설정으로 바로 다운로드해요.\n"
-                                    "(재생목록은 고르는 창이 떠요)")
+        self.auto_toggle.setToolTip(tr("바로 받기\n켜면 링크를 붙여넣자마자 지금 고른 설정으로 바로 다운로드해요.\n"
+                                    "(재생목록은 고르는 창이 떠요)"))
         self.auto_toggle.toggled.connect(self._on_auto_toggled)
         bl.addWidget(self.auto_toggle)
-        self.l_auto = QLabel("바로 받기")
+        self.l_auto = QLabel(tr("바로 받기"))
         self.l_auto.setObjectName("ChipLabel")
         bl.addWidget(self.l_auto)
         bl.addSpacing(12)
@@ -154,15 +155,15 @@ class MainWindow(QMainWindow):
             lbl.setObjectName("ChipLabel")
             return lbl
 
-        self.mode = ModeCombo([("video", "영상"), ("audio", "오디오")])
+        self.mode = ModeCombo([("video", tr("영상")), ("audio", tr("오디오"))])
         self.mode.changed.connect(self._on_mode_changed)
         self.quality = ChipCombo()
         self.quality.currentIndexChanged.connect(self._on_option_changed)
         self.fmt = ChipCombo()
         self.fmt.currentIndexChanged.connect(self._on_option_changed)
-        self.l_quality = chip_label("화질")
-        self.l_fmt = chip_label("포맷")
-        bl.addWidget(chip_label("다운로드"))
+        self.l_quality = chip_label(tr("화질"))
+        self.l_fmt = chip_label(tr("포맷"))
+        bl.addWidget(chip_label(tr("다운로드")))
         bl.addWidget(self.mode)
         bl.addSpacing(8)
         bl.addWidget(self.l_quality)
@@ -171,29 +172,29 @@ class MainWindow(QMainWindow):
         bl.addWidget(self.l_fmt)
         bl.addWidget(self.fmt)
         bl.addSpacing(8)
-        bl.addWidget(chip_label("저장 위치"))
+        bl.addWidget(chip_label(tr("저장 위치")))
         self.dest_btn = ChipButton()
         self.dest_btn.clicked.connect(self._dest_menu)
         bl.addWidget(self.dest_btn)
         bl.addSpacing(8)
-        self.l_subs = chip_label("자막/더빙")
+        self.l_subs = chip_label(tr("자막/더빙"))
         self.b_subs = ChipButton()
-        self.b_subs.setToolTip("받을 자막 언어, 더빙(음성 언어), 저장 방식을 골라요 (영상마다 따로 정할 수 있어요)")
+        self.b_subs.setToolTip(tr("받을 자막 언어, 더빙(음성 언어), 저장 방식을 골라요 (영상마다 따로 정할 수 있어요)"))
         self.b_subs.clicked.connect(self._choose_subs)
         bl.addWidget(self.l_subs)
         bl.addWidget(self.b_subs)
         bl.addSpacing(8)
-        self.l_tags = chip_label("태그")
+        self.l_tags = chip_label(tr("태그"))
         self.b_tags = ChipButton()
-        self.b_tags.setToolTip("음원 파일의 제목·아티스트·앨범·커버 태그를 넣을지, 어떤 값으로 넣을지 골라요")
+        self.b_tags.setToolTip(tr("음원 파일의 제목·아티스트·앨범·커버 태그를 넣을지, 어떤 값으로 넣을지 골라요"))
         self.b_tags.clicked.connect(self._choose_tags)
         bl.addWidget(self.l_tags)
         bl.addWidget(self.b_tags)
         bl.addStretch(1)
 
-        self.b_settings = icon_button("gear", "설정", size=22, box=36)
+        self.b_settings = icon_button("gear", tr("설정"), size=22, box=36)
         self.b_settings.clicked.connect(self._open_settings)
-        self.b_tools = icon_button("info", "도구 상태", size=22, box=36)
+        self.b_tools = icon_button("info", tr("도구 상태"), size=22, box=36)
         self.b_tools.clicked.connect(lambda: self._open_deps_dialog())
         bl.addWidget(self.b_settings)
         bl.addWidget(self.b_tools)
@@ -224,12 +225,12 @@ class MainWindow(QMainWindow):
         url_row.setSpacing(8)
         self.url_edit = QLineEdit()
         self.url_edit.setObjectName("UrlInput")
-        self.url_edit.setPlaceholderText("유튜브 영상이나 재생목록 주소를 붙여넣고 Enter")
+        self.url_edit.setPlaceholderText(tr("유튜브 영상이나 재생목록 주소를 붙여넣고 Enter"))
         self.url_edit.setClearButtonEnabled(True)
         self.url_edit.returnPressed.connect(self._fetch_clicked)
-        self.b_fetch = make_button("불러오기", primary=True)
+        self.b_fetch = make_button(tr("불러오기"), primary=True)
         self.b_fetch.clicked.connect(self._fetch_clicked)
-        self.b_close_panel = icon_button("close", "닫기 (Esc)", color="#9aa0aa", size=16, box=30)
+        self.b_close_panel = icon_button("close", tr("닫기 (Esc)"), color="#9aa0aa", size=16, box=30)
         self.b_close_panel.clicked.connect(self._close_panel)
         url_row.addWidget(self.url_edit, 1)
         url_row.addWidget(self.b_fetch)
@@ -242,9 +243,9 @@ class MainWindow(QMainWindow):
         self.v_notice = QLabel()
         self.v_notice.setObjectName("Notice")
         self.v_notice.setWordWrap(True)
-        self.b_fetch_log = make_button("자세한 로그 보기", link=True)
+        self.b_fetch_log = make_button(tr("자세한 로그 보기"), link=True)
         self.b_fetch_log.clicked.connect(
-            lambda: show_log_dialog(self, "불러오기 로그", self._last_fetch_log.splitlines()))
+            lambda: show_log_dialog(self, tr("불러오기 로그"), self._last_fetch_log.splitlines()))
         notice_row.addWidget(self.v_notice, 1)
         notice_row.addWidget(self.b_fetch_log, 0, Qt.AlignmentFlag.AlignTop)
         self.notice_box = QWidget()
@@ -265,7 +266,7 @@ class MainWindow(QMainWindow):
         self._filter_btns: dict[str, QPushButton] = {}
         self._filter_group = QButtonGroup(self)
         self._filter_group.setExclusive(True)
-        for key, label in (("all", "전체"), ("video", "동영상"), ("audio", "오디오"), ("history", "기록")):
+        for key, label in (("all", tr("전체")), ("video", tr("동영상")), ("audio", tr("오디오")), ("history", tr("기록"))):
             b = QPushButton(label)
             b.setProperty("tab", True)
             b.setCheckable(True)
@@ -280,7 +281,7 @@ class MainWindow(QMainWindow):
         self.q_status.setObjectName("Muted")
         tl.addWidget(self.q_status)
         tl.addSpacing(6)
-        self.b_list_menu = icon_button("kebab", "목록 관리", size=18, box=30)
+        self.b_list_menu = icon_button("kebab", tr("목록 관리"), size=18, box=30)
         self.b_list_menu.clicked.connect(self._list_menu)
         tl.addWidget(self.b_list_menu)
         bd.addWidget(tab_row)
@@ -302,11 +303,11 @@ class MainWindow(QMainWindow):
         empty_icon = QLabel()
         empty_icon.setPixmap(icons.pixmap("download", "#454a55", 56))
         empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.q_empty_title = QLabel("링크를 붙여넣어 시작하세요")
+        self.q_empty_title = QLabel(tr("링크를 붙여넣어 시작하세요"))
         self.q_empty_title.setObjectName("EmptyTitle")
         self.q_empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.q_empty_sub = QLabel("위의 [링크 붙여넣기]를 누르거나, 창에 주소를 끌어다 놓아도 돼요.\n"
-                                  "유튜브 영상·재생목록·쇼츠 주소를 지원해요.")
+        self.q_empty_sub = QLabel(tr("위의 [링크 붙여넣기]를 누르거나, 창에 주소를 끌어다 놓아도 돼요.\n"
+                                  "유튜브 영상·재생목록·쇼츠 주소를 지원해요."))
         self.q_empty_sub.setObjectName("Empty")
         self.q_empty_sub.setAlignment(Qt.AlignmentFlag.AlignCenter)
         el.addWidget(empty_icon)
@@ -323,7 +324,7 @@ class MainWindow(QMainWindow):
         bd.addWidget(self.stack, 1)
 
         # ---- 상태 표시줄 -------------------------------------------------------
-        self.status_msg = QLabel("도구 확인 중…")
+        self.status_msg = QLabel(tr("도구 확인 중…"))
         self.status_msg.setContentsMargins(10, 0, 0, 0)
         self.statusBar().addWidget(self.status_msg, 1)
         self.statusBar().setSizeGripEnabled(False)
@@ -335,7 +336,7 @@ class MainWindow(QMainWindow):
         self.about_btn = QPushButton(f"{APP_NAME} {APP_VERSION}")
         self.about_btn.setProperty("ghost", True)
         self.about_btn.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.about_btn.setToolTip(f"앱 정보 · {version_text()} (F1)")
+        self.about_btn.setToolTip(tr("앱 정보 · {version_text} (F1)").format(version_text=version_text()))
         self.about_btn.clicked.connect(self._open_about)
         self.statusBar().addPermanentWidget(self.about_btn)
         QShortcut(QKeySequence("F1"), self, activated=self._open_about)
@@ -352,9 +353,9 @@ class MainWindow(QMainWindow):
         self.tray = QSystemTrayIcon(app_icon(), self)
         self.tray.setToolTip(APP_NAME)
         menu = QMenu(self)
-        a_show = QAction("창 열기", self)
+        a_show = QAction(tr("창 열기"), self)
         a_show.triggered.connect(self._raise)
-        a_quit = QAction("종료", self)
+        a_quit = QAction(tr("종료"), self)
         a_quit.triggered.connect(self.close)
         menu.addAction(a_show)
         menu.addAction(a_quit)
@@ -404,14 +405,14 @@ class MainWindow(QMainWindow):
         info = self.info
         heights = info.heights if (info and info.kind == "video" and info.heights) else HEIGHT_CHOICES
         best_size = info.estimated_size(0) if (info and info.kind == "video") else None
-        self.quality.addChip("최고 화질" + (f"  ≈ {human_size(best_size)}" if best_size else ""), 0, short="최고")
+        self.quality.addChip(tr("최고 화질") + (f"  ≈ {human_size(best_size)}" if best_size else ""), 0, short=tr("최고"))
         for h in heights:
             size = info.estimated_size(h) if (info and info.kind == "video") else None
             label = height_label(h)
             if info and info.kind == "video" and size:
                 label += f"  ≈ {human_size(size)}"
             elif not (info and info.kind == "video"):
-                label = f"최대 {label}"
+                label = tr("최대 {label}").format(label=label)
             self.quality.addChip(label, h, short=height_label(h).split(" ")[0])
         want = self.settings.max_height
         idx = self.quality.findData(want)
@@ -492,8 +493,8 @@ class MainWindow(QMainWindow):
             missing = deps.missing_required()
             if missing:
                 self._open_deps_dialog(
-                    intro="처음 사용하려면 도구가 필요해요: " + ", ".join(missing)
-                    + "\n[없는 도구 설치]를 누르면 자동으로 받아요 (약 200MB, 한 번만 받으면 돼요).")
+                    intro=tr("처음 사용하려면 도구가 필요해요: ") + ", ".join(missing)
+                    + tr("\n[없는 도구 설치]를 누르면 자동으로 받아요 (약 200MB, 한 번만 받으면 돼요)."))
             else:
                 self._maybe_paste_clipboard()
 
@@ -503,18 +504,18 @@ class MainWindow(QMainWindow):
         self.queue.set_paused(self.queue._paused)   # 도구가 새로 설치됐으면 대기 중인 작업 시작
         missing = deps.missing_required()
         if missing:
-            self.deps_btn.setText("⚠ 필요한 도구 없음: " + ", ".join(missing))
+            self.deps_btn.setText(tr("⚠ 필요한 도구 없음: ") + ", ".join(missing))
             self.deps_btn.setStyleSheet(f"color: {WARNING};")
             self.b_tools.setIcon(icons.icon("info", WARNING, 22))
-            self.b_tools.setToolTip("도구 상태 · 필요한 도구가 없어요: " + ", ".join(missing))
+            self.b_tools.setToolTip(tr("도구 상태 · 필요한 도구가 없어요: ") + ", ".join(missing))
         else:
             js = deps.js.name if deps.js else ""
             self.deps_btn.setText(f"yt-dlp {deps.ytdlp.version} · ffmpeg ✔ · {js} ✔")
             self.deps_btn.setStyleSheet("")
             self.b_tools.setIcon(icons.icon("info", ICON, 22))
-            self.b_tools.setToolTip(f"도구 상태 · yt-dlp {deps.ytdlp.version} · ffmpeg ✔ · {js} ✔")
-        if self.status_msg.text() == "도구 확인 중…":
-            self.status_msg.setText("준비됐어요")
+            self.b_tools.setToolTip(tr("도구 상태 · yt-dlp {version} · ffmpeg ✔ · {js} ✔").format(version=deps.ytdlp.version, js=js))
+        if self.status_msg.text() == tr("도구 확인 중…"):
+            self.status_msg.setText(tr("준비됐어요"))
 
     def _update_due(self) -> bool:
         """yt-dlp 업데이트 확인은 하루에 한 번만."""
@@ -525,7 +526,7 @@ class MainWindow(QMainWindow):
         return datetime.now() - last >= timedelta(hours=24) or last > datetime.now()
 
     def _auto_update(self) -> None:
-        self.status_msg.setText("yt-dlp 업데이트 확인 중…")
+        self.status_msg.setText(tr("yt-dlp 업데이트 확인 중…"))
         self._updater = YtdlpUpdater(self.deps.ytdlp.path, self)
 
         def done(ok: bool, last: str) -> None:
@@ -535,16 +536,16 @@ class MainWindow(QMainWindow):
                 self.settings.last_update_check = datetime.now().isoformat(timespec="seconds")
                 self.settings.save()
             if ok and "Updated yt-dlp" in last:
-                self.status_msg.setText("yt-dlp를 최신 버전으로 업데이트했어요")
+                self.status_msg.setText(tr("yt-dlp를 최신 버전으로 업데이트했어요"))
                 self._check_deps(initial=False)
             elif ok:
-                self.status_msg.setText("yt-dlp가 최신 버전이에요")
+                self.status_msg.setText(tr("yt-dlp가 최신 버전이에요"))
             else:
-                self.status_msg.setText("yt-dlp 업데이트 확인 실패 (인터넷 연결 확인)")
+                self.status_msg.setText(tr("yt-dlp 업데이트 확인 실패 (인터넷 연결 확인)"))
             self.queue.set_paused(False)
             missing = self.deps.missing_required()
             if missing:
-                self._open_deps_dialog(intro="필요한 도구가 없어요: " + ", ".join(missing))
+                self._open_deps_dialog(intro=tr("필요한 도구가 없어요: ") + ", ".join(missing))
             else:
                 self._maybe_paste_clipboard()
 
@@ -572,7 +573,9 @@ class MainWindow(QMainWindow):
         dlg.deleteLater()
         if saved:
             self._apply_settings_to_ui()
-            self.status_msg.setText("설정을 저장했어요")
+            self.status_msg.setText(tr("설정을 저장했어요"))
+            if resolve(self.settings.language) != current_language():
+                QMessageBox.information(self, tr("언어 / Language"), tr("언어는 프로그램을 다시 시작하면 바뀌어요."))
 
     # ==================================================================
     # 정보 불러오기
@@ -586,8 +589,8 @@ class MainWindow(QMainWindow):
             self._auto_pending = self.auto_toggle.isChecked()
             self.fetch()
         else:
-            self.toasts.show("warn", "클립보드에 링크가 없어요",
-                             "주소를 복사한 뒤 다시 눌러 주세요. (직접 입력하려면 Ctrl+L)")
+            self.toasts.show("warn", tr("클립보드에 링크가 없어요"),
+                             tr("주소를 복사한 뒤 다시 눌러 주세요. (직접 입력하려면 Ctrl+L)"))
 
     def _fetch_clicked(self) -> None:
         self._auto_pending = False       # 직접 입력해서 누른 건 먼저 보고 고르기
@@ -596,8 +599,8 @@ class MainWindow(QMainWindow):
     def _on_auto_toggled(self, on: bool) -> None:
         self.settings.auto_download = on
         self.settings.save()
-        self.status_msg.setText("바로 받기 켬 - 링크를 붙여넣으면 지금 설정으로 바로 받아요" if on
-                                else "바로 받기 끔 - 링크를 붙여넣으면 정보를 먼저 보여줘요")
+        self.status_msg.setText(tr("바로 받기 켬 - 링크를 붙여넣으면 지금 설정으로 바로 받아요") if on
+                                else tr("바로 받기 끔 - 링크를 붙여넣으면 정보를 먼저 보여줘요"))
 
     # ---- 정보 패널 --------------------------------------------------------
     def _open_panel(self, focus: bool = False) -> None:
@@ -632,13 +635,13 @@ class MainWindow(QMainWindow):
                 url = f"https://www.youtube.com/watch?v={url}"
                 self.url_edit.setText(url)
             else:
-                self._report_error("올바른 주소가 아니에요. https:// 로 시작하는 주소를 넣어 주세요.")
+                self._report_error(tr("올바른 주소가 아니에요. https:// 로 시작하는 주소를 넣어 주세요."))
                 return
         if not self.deps_ready:
-            self.status_msg.setText("도구 확인이 끝나면 다시 눌러 주세요")
+            self.status_msg.setText(tr("도구 확인이 끝나면 다시 눌러 주세요"))
             return
         if not self.deps.ytdlp.ok:
-            self._open_deps_dialog(intro="영상 정보를 불러오려면 yt-dlp가 필요해요.")
+            self._open_deps_dialog(intro=tr("영상 정보를 불러오려면 yt-dlp가 필요해요."))
             if not self.deps.ytdlp.ok:
                 return
         playlist = bool(force_playlist) or (self.settings.prefer_playlist and has_playlist_param(url)) \
@@ -646,22 +649,22 @@ class MainWindow(QMainWindow):
         if not force_playlist:
             self._channel_retry = False
         self.b_fetch.setEnabled(False)
-        self.b_fetch.setText("불러오는 중…")
+        self.b_fetch.setText(tr("불러오는 중…"))
         self.fetch_bar.setVisible(True)
-        self.status_msg.setText("영상 정보를 불러오는 중… (Esc로 취소)")
+        self.status_msg.setText(tr("영상 정보를 불러오는 중… (Esc로 취소)"))
         self.fetcher.fetch(url, self.deps, playlist=playlist, cookies_browser=self.settings.cookies_browser)
 
     def _escape(self) -> None:
         if self.fetcher.busy:
             self.fetcher.abort()
             self._fetch_ui_idle()
-            self.status_msg.setText("불러오기를 취소했어요")
+            self.status_msg.setText(tr("불러오기를 취소했어요"))
         elif self._panel_open:
             self._close_panel()
 
     def _fetch_ui_idle(self) -> None:
         self.b_fetch.setEnabled(True)
-        self.b_fetch.setText("불러오기")
+        self.b_fetch.setText(tr("불러오기"))
         self.fetch_bar.setVisible(False)
 
     def _on_info(self, info: MediaInfo, url: str) -> None:
@@ -674,11 +677,11 @@ class MainWindow(QMainWindow):
             return
         self._fetch_ui_idle()
         if info.kind == "playlist" and info.nested_tabs:
-            self._show_notice("채널 주소예요. 채널의 '동영상' 탭 주소(…/videos)나 재생목록 주소를 넣어 주세요.")
-            self.status_msg.setText("불러왔어요")
+            self._show_notice(tr("채널 주소예요. 채널의 '동영상' 탭 주소(…/videos)나 재생목록 주소를 넣어 주세요."))
+            self.status_msg.setText(tr("불러왔어요"))
             return
         item = self._add_ready(info, url)
-        self.status_msg.setText("불러왔어요 - 목록의 [다운로드]를 눌러 받으세요")
+        self.status_msg.setText(tr("불러왔어요 - 목록의 [다운로드]를 눌러 받으세요"))
         if self._auto_pending:          # '바로 받기': 카드를 거치지 않고 바로 받기
             self._auto_pending = False
             if item.can_download() and info.kind == "video":
@@ -686,7 +689,7 @@ class MainWindow(QMainWindow):
                 self._download_ready(item)
                 if len(self.queue.jobs) > before:
                     self._close_panel()
-                    self.toasts.show("ok", "다운로드 목록에 추가했어요", info.title, timeout_ms=3500)
+                    self.toasts.show("ok", tr("다운로드 목록에 추가했어요"), info.title, timeout_ms=3500)
                     return
         # 주소 입력 칸은 닫고, 카드는 목록 맨 위에 보여준다
         self._panel_open = False
@@ -699,7 +702,7 @@ class MainWindow(QMainWindow):
         self._auto_pending = False
         self._last_fetch_log = log
         self._report_error(message, log)
-        self.status_msg.setText("불러오지 못했어요")
+        self.status_msg.setText(tr("불러오지 못했어요"))
 
     def _can_download(self, info: MediaInfo) -> bool:
         if info.kind == "playlist":
@@ -713,7 +716,7 @@ class MainWindow(QMainWindow):
             self.b_fetch_log.setVisible(bool(log.strip()))
             self._update_panel_state()
         else:
-            self.toasts.show("error", "불러오지 못했어요", message[:160], timeout_ms=7000)
+            self.toasts.show("error", tr("불러오지 못했어요"), message[:160], timeout_ms=7000)
 
     def _show_notice(self, text: str, error: bool = False) -> None:
         self.v_notice.setObjectName("Error" if error else "Notice")
@@ -832,7 +835,7 @@ class MainWindow(QMainWindow):
         return str(d)
 
     def _choose_dir(self) -> None:
-        d = QFileDialog.getExistingDirectory(self, "저장 위치 선택", self.settings.download_dir)
+        d = QFileDialog.getExistingDirectory(self, tr("저장 위치 선택"), self.settings.download_dir)
         if d:
             self.settings.download_dir = d
             self.settings.save()
@@ -848,8 +851,8 @@ class MainWindow(QMainWindow):
 
     def _dest_menu(self) -> None:
         m = QMenu(self)
-        m.addAction("폴더 변경…", self._choose_dir)
-        m.addAction("폴더 열기", lambda: reveal_in_explorer(self._ensure_dir()))
+        m.addAction(tr("폴더 변경…"), self._choose_dir)
+        m.addAction(tr("폴더 열기"), lambda: reveal_in_explorer(self._ensure_dir()))
         m.exec(self.dest_btn.mapToGlobal(QPoint(0, self.dest_btn.height() + 2)))
         m.deleteLater()
 
@@ -858,7 +861,7 @@ class MainWindow(QMainWindow):
         ts = self._cur_tags()
         out_dir = self._ensure_dir()
         if not Path(out_dir).is_dir():
-            QMessageBox.warning(self, "저장 위치", f"저장 폴더를 만들 수 없어요:\n{out_dir}")
+            QMessageBox.warning(self, tr("저장 위치"), tr("저장 폴더를 만들 수 없어요:\n{out_dir}").format(out_dir=out_dir))
             return None
         return DownloadOptions(
             mode=self.mode.value(),
@@ -890,14 +893,14 @@ class MainWindow(QMainWindow):
         if info is None:
             return
         if not self.deps.ytdlp.ok:
-            self._open_deps_dialog(intro="다운로드하려면 yt-dlp가 필요해요.")
+            self._open_deps_dialog(intro=tr("다운로드하려면 yt-dlp가 필요해요."))
             if not self.deps.ytdlp.ok:
                 return
         missing = [m for m in self.deps.missing_required() if m != "yt-dlp"]
         if missing:
             r = QMessageBox.question(
-                self, "도구 없음",
-                f"{', '.join(missing)}이(가) 없어서 일부 형식이 실패하거나 화질이 낮을 수 있어요.\n지금 설치할까요?",
+                self, tr("도구 없음"),
+                tr("{join}이(가) 없어서 일부 형식이 실패하거나 화질이 낮을 수 있어요.\n지금 설치할까요?").format(join=', '.join(missing)),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if r == QMessageBox.StandardButton.Yes:
                 self._open_deps_dialog()
@@ -922,19 +925,19 @@ class MainWindow(QMainWindow):
                 job = DownloadJob(entry.url, entry.title, o, entry.thumbnail or info.thumbnail)
                 job.duration = entry.duration
                 self.queue.add(job)
-            self.status_msg.setText(f"{len(chosen)}개를 다운로드 목록에 추가했어요")
+            self.status_msg.setText(tr("{len}개를 다운로드 목록에 추가했어요").format(len=len(chosen)))
         else:
             url = info.url or self.info_url
             dup = next((j for j in self.queue.jobs if j.url == url and j.is_active
                         and j.options.summary() == opts.summary()), None)
             if dup is not None:
-                r = QMessageBox.question(self, "이미 목록에 있어요", "같은 설정으로 받는 중이에요. 한 번 더 추가할까요?")
+                r = QMessageBox.question(self, tr("이미 목록에 있어요"), tr("같은 설정으로 받는 중이에요. 한 번 더 추가할까요?"))
                 if r != QMessageBox.StandardButton.Yes:
                     return
             job = DownloadJob(url, info.title, opts, info.thumbnail)
             job.duration = info.duration
             self.queue.add(job)
-            self.status_msg.setText("다운로드 목록에 추가했어요")
+            self.status_msg.setText(tr("다운로드 목록에 추가했어요"))
         if self._filter == "history" or self._filter not in ("all", opts.mode):
             self._set_filter("all")
 
@@ -970,7 +973,7 @@ class MainWindow(QMainWindow):
 
     def _on_job_finished(self, job: DownloadJob) -> None:
         if job.state in (DONE, FAILED):
-            summary = job.options.summary() + (" · 이미 있음" if job.skipped else "")
+            summary = job.options.summary() + (tr(" · 이미 있음") if job.skipped else "")
             self.history.add(title=job.title, url=job.url, filepath=job.filepath, summary=summary,
                              ok=job.state == DONE, error=job.error, thumbnail=job.thumbnail)
             self.history_view.reload()
@@ -978,11 +981,11 @@ class MainWindow(QMainWindow):
             return
         if job.state == DONE:
             if job.skipped:
-                self.toasts.show("warn", "이미 받은 파일이에요", job.title)
+                self.toasts.show("warn", tr("이미 받은 파일이에요"), job.title)
             else:
-                self.toasts.show("ok", "다운로드 완료", job.title)
+                self.toasts.show("ok", tr("다운로드 완료"), job.title)
         elif job.state == FAILED:
-            self.toasts.show("error", "다운로드 실패", (job.error or job.title)[:140], timeout_ms=8000)
+            self.toasts.show("error", tr("다운로드 실패"), (job.error or job.title)[:140], timeout_ms=8000)
 
     # ---- 필터 / 목록 관리 --------------------------------------------------
     def _set_filter(self, key: str) -> None:
@@ -1006,49 +1009,48 @@ class MainWindow(QMainWindow):
         shown += len(self._ready)
         self.q_empty.setVisible(shown == 0)
         if self._item_widgets and shown == 0:
-            what = "동영상" if self._filter == "video" else "오디오"
-            self.q_empty_title.setText(f"받은 {what}가 없어요" if self._filter == "audio" else f"받은 {what}이 없어요")
-            self.q_empty_sub.setText("다른 탭에서 전체 목록을 볼 수 있어요.")
+            self.q_empty_title.setText(tr("받은 동영상이 없어요") if self._filter == "video" else tr("받은 오디오가 없어요"))
+            self.q_empty_sub.setText(tr("다른 탭에서 전체 목록을 볼 수 있어요."))
         else:
-            self.q_empty_title.setText("링크를 붙여넣어 시작하세요")
-            self.q_empty_sub.setText("위의 [링크 붙여넣기]를 누르거나, 창에 주소를 끌어다 놓아도 돼요.\n"
-                                     "유튜브 영상·재생목록·쇼츠 주소를 지원해요.")
+            self.q_empty_title.setText(tr("링크를 붙여넣어 시작하세요"))
+            self.q_empty_sub.setText(tr("위의 [링크 붙여넣기]를 누르거나, 창에 주소를 끌어다 놓아도 돼요.\n"
+                                     "유튜브 영상·재생목록·쇼츠 주소를 지원해요."))
 
     def _list_menu(self) -> None:
         m = QMenu(self)
-        m.addAction("완료 항목 정리",
+        m.addAction(tr("완료 항목 정리"),
                     lambda: self.queue.clear_finished(delete_partials=self.settings.delete_partials_on_remove))
-        m.addAction("모두 취소", self.queue.cancel_all)
+        m.addAction(tr("모두 취소"), self.queue.cancel_all)
         m.exec(self.b_list_menu.mapToGlobal(QPoint(self.b_list_menu.width() - 150, self.b_list_menu.height() + 2)))
         m.deleteLater()
 
     def _update_counts(self) -> None:
         c = self.queue.counts()
         active = c["running"] + c["queued"]
-        parts = [f"{len(self.queue.jobs)} 아이템"]
+        parts = [tr("{len} 아이템").format(len=len(self.queue.jobs))]
         if c["running"]:
-            parts.append(f"진행 {c['running']}")
+            parts.append(tr("진행 {v}").format(v=c['running']))
         if c["queued"]:
-            parts.append(f"대기 {c['queued']}")
+            parts.append(tr("대기 {v}").format(v=c['queued']))
         if c["done"]:
-            parts.append(f"완료 {c['done']}")
+            parts.append(tr("완료 {v}").format(v=c['done']))
         if c["failed"]:
-            parts.append(f"실패 {c['failed']}")
+            parts.append(tr("실패 {v}").format(v=c['failed']))
         if c["canceled"]:
-            parts.append(f"취소 {c['canceled']}")
+            parts.append(tr("취소 {v}").format(v=c['canceled']))
         self.q_status.setText(" · ".join(parts))
         title = APP_NAME
         if c["running"]:
             fr = [j.fraction for j in self.queue.jobs if j.state == "running" and j.fraction is not None]
             if fr:
-                title = f"{int(sum(fr) / len(fr) * 100)}% · {active}개 진행 - {APP_NAME}"
+                title = tr("{int}% · {active}개 진행 - {APP_NAME}").format(int=int(sum(fr) / len(fr) * 100), active=active, APP_NAME=APP_NAME)
             else:
-                title = f"{active}개 진행 - {APP_NAME}"
+                title = tr("{active}개 진행 - {APP_NAME}").format(active=active, APP_NAME=APP_NAME)
         if self.windowTitle() != title:
             self.setWindowTitle(title)
 
     def _on_all_done(self, ok: int, fail: int) -> None:
-        msg = f"다운로드가 끝났어요 · 성공 {ok}개" + (f", 실패 {fail}개" if fail else "")
+        msg = tr("다운로드가 끝났어요 · 성공 {ok}개").format(ok=ok) + (tr(", 실패 {fail}개").format(fail=fail) if fail else "")
         self.status_msg.setText(msg)
         if not self.settings.notify_on_finish:
             return
@@ -1104,27 +1106,27 @@ class MainWindow(QMainWindow):
     def _update_tags_button(self) -> None:
         ts = self._cur_tags()
         text = ts.button_text()
-        if text.startswith("태그: "):
+        if text.startswith(tr("태그: ")):
             text = text[4:]
         self.b_tags.setText(self._clip(text, 9))
         if ts.on and ts.values:
             v = ts.values
             self.b_tags.setToolTip("\n".join(f"{k}: {v.get(f, '')}" for f, k in
-                                             (("title", "제목"), ("artist", "아티스트"), ("album", "앨범"), ("year", "연도"))))
+                                             (("title", tr("제목")), ("artist", tr("아티스트")), ("album", tr("앨범")), ("year", tr("연도")))))
         else:
-            self.b_tags.setToolTip("음원 파일의 제목·아티스트·앨범·커버 태그를 넣을지, 어떤 값으로 넣을지 골라요")
+            self.b_tags.setToolTip(tr("음원 파일의 제목·아티스트·앨범·커버 태그를 넣을지, 어떤 값으로 넣을지 골라요"))
 
     def _update_subs_button(self) -> None:
         audio = self.mode.value() == "audio"
         full = summarize(self.sub_langs, self.sub_auto, self.settings.sub_mode, audio, self.dub_lang)
         names = [LANG_NAMES.get(c.split("-")[0], c) for c in self.sub_langs]
-        text = (", ".join(names[:2]) + (f" 외 {len(names) - 2}" if len(names) > 2 else "")) if names else "없음"
+        text = (", ".join(names[:2]) + (tr(" 외 {v}").format(v=len(names) - 2) if len(names) > 2 else "")) if names else tr("없음")
         info = self.info
         if not names and info is not None and info.kind == "video" and not info.subtitles and not info.auto_captions:
-            text = "자막 없음"
+            text = tr("자막 없음")
         if self.dub_lang:
-            text += f" · {dub_name(self.dub_lang)} 더빙"
-        self.b_subs.setToolTip("받을 자막 언어, 더빙(음성 언어), 저장 방식을 골라요 (영상마다 따로 정할 수 있어요)\n지금: " + full)
+            text += tr(" · {dub_name} 더빙").format(dub_name=dub_name(self.dub_lang))
+        self.b_subs.setToolTip(tr("받을 자막 언어, 더빙(음성 언어), 저장 방식을 골라요 (영상마다 따로 정할 수 있어요)\n지금: ") + full)
         self.b_subs.setText(self._clip(text, 15))
 
     @staticmethod
@@ -1150,7 +1152,7 @@ class MainWindow(QMainWindow):
             self.queue.add(job)
         waiting = sum(1 for j in jobs if j.state == "queued")
         if waiting:
-            self.status_msg.setText(f"지난번에 받던 {waiting}개를 이어서 받아요")
+            self.status_msg.setText(tr("지난번에 받던 {waiting}개를 이어서 받아요").format(waiting=waiting))
 
     # ==================================================================
     # 클립보드 / 드래그 앤 드롭 / 종료
@@ -1193,11 +1195,11 @@ class MainWindow(QMainWindow):
     def closeEvent(self, event) -> None:  # noqa: N802
         if self.queue.has_active():
             box = QMessageBox(self)
-            box.setWindowTitle("종료")
+            box.setWindowTitle(tr("종료"))
             box.setIcon(QMessageBox.Icon.Question)
-            box.setText("받는 중이거나 대기 중인 다운로드가 있어요.\n지금 종료하면 다음에 켤 때 이어서 받아요.")
-            b_quit = box.addButton("종료", QMessageBox.ButtonRole.AcceptRole)
-            box.addButton("계속 받기", QMessageBox.ButtonRole.RejectRole)
+            box.setText(tr("받는 중이거나 대기 중인 다운로드가 있어요.\n지금 종료하면 다음에 켤 때 이어서 받아요."))
+            b_quit = box.addButton(tr("종료"), QMessageBox.ButtonRole.AcceptRole)
+            box.addButton(tr("계속 받기"), QMessageBox.ButtonRole.RejectRole)
             box.exec()
             if box.clickedButton() is not b_quit:
                 event.ignore()

@@ -16,6 +16,7 @@ from .errors import explain
 from .options import DownloadOptions, build_args
 from .proc import LineBuffer, kill_tree, make_process
 from .progress import overall_fraction, parse_line
+from ..i18n import tr
 
 QUEUED = "queued"
 RUNNING = "running"
@@ -24,11 +25,11 @@ FAILED = "failed"
 CANCELED = "canceled"
 
 STATE_LABELS = {
-    QUEUED: "대기 중",
-    RUNNING: "진행 중",
-    DONE: "완료",
-    FAILED: "실패",
-    CANCELED: "취소됨",
+    QUEUED: tr("대기 중"),
+    RUNNING: tr("진행 중"),
+    DONE: tr("완료"),
+    FAILED: tr("실패"),
+    CANCELED: tr("취소됨"),
 }
 
 POSTPROCESS_FRACTION = 0.97   # 다운로드가 끝나고 합치기/변환하는 동안 보여줄 진행률
@@ -50,7 +51,7 @@ class DownloadJob(QObject):
 
         self.state = QUEUED
         self.fraction: Optional[float] = None   # 0~1 전체 진행률, None = 알 수 없음(막대 애니메이션)
-        self.detail = "대기 중"
+        self.detail = tr("대기 중")
         self.filepath: Optional[str] = None
         self.error: Optional[str] = None
         self.skipped = False                    # 이미 있는 파일이라 건너뜀
@@ -90,7 +91,7 @@ class DownloadJob(QObject):
         if state in (FAILED, CANCELED):
             job.state = state
             job.error = data.get("error")
-            job.detail = job.error or ("취소됨 (다시 시도하면 이어받아요)" if state == CANCELED else "실패")
+            job.detail = job.error or (tr("취소됨 (다시 시도하면 이어받아요)") if state == CANCELED else tr("실패"))
         return job
 
     # ------------------------------------------------------------------
@@ -109,10 +110,10 @@ class DownloadJob(QObject):
             return
         self._reset_runtime()
         if not deps.ytdlp.ok:
-            self._finish(FAILED, error="yt-dlp가 설치되어 있지 않아요. [도구 상태]에서 설치해 주세요.")
+            self._finish(FAILED, error=tr("yt-dlp가 설치되어 있지 않아요. [도구 상태]에서 설치해 주세요."))
             return
         self.state = RUNNING
-        self.detail = "시작하는 중…"
+        self.detail = tr("시작하는 중…")
         self.fraction = None
         self.changed.emit()
 
@@ -133,7 +134,7 @@ class DownloadJob(QObject):
         if self.state != RUNNING:
             return
         self._cancel_requested = True
-        self.detail = "취소하는 중…"
+        self.detail = tr("취소하는 중…")
         self.changed.emit()
         if self._proc is not None:
             kill_tree(self._proc)
@@ -154,7 +155,7 @@ class DownloadJob(QObject):
                 self.options = self.options.copy(overwrite=True)
             self._reset_runtime()
             self.state = QUEUED
-            self.detail = "대기 중"
+            self.detail = tr("대기 중")
             self.fraction = None
             self.error = None
             self.changed.emit()
@@ -220,7 +221,7 @@ class DownloadJob(QObject):
             self._dl_started = True
             self._streams = value.sizes
             self._stream_idx = 0
-            self.detail = "다운로드 준비 중…"
+            self.detail = tr("다운로드 준비 중…")
             self.fraction = None
             self.changed.emit()
         elif kind == "stage":
@@ -234,10 +235,10 @@ class DownloadJob(QObject):
     def _postprocess_label(self) -> str:
         o = self.options
         if o.mode == "audio":
-            return "음원으로 변환하는 중…"
+            return tr("음원으로 변환하는 중…")
         if o.has_subs or o.embed_thumbnail:
-            return "영상·음성 합치고 정리하는 중…"
-        return "영상·음성 합치는 중…"
+            return tr("영상·음성 합치고 정리하는 중…")
+        return tr("영상·음성 합치는 중…")
 
     def _on_progress(self, p) -> None:
         if p.tmpfilename:
@@ -258,13 +259,13 @@ class DownloadJob(QObject):
         kind = p.stream_kind
         n = len(self._streams)
         if self.options.mode == "audio":
-            label = "음원 받는 중"
+            label = tr("음원 받는 중")
         elif kind == "audio":
-            label = "음성 받는 중"
+            label = tr("음성 받는 중")
         elif kind == "video":
-            label = "영상 받는 중"
+            label = tr("영상 받는 중")
         else:
-            label = "받는 중"
+            label = tr("받는 중")
         if n > 1:
             label += f" ({min(self._stream_idx + 1, n)}/{n})"
         cur = p.fraction
@@ -291,7 +292,7 @@ class DownloadJob(QObject):
 
     def _on_error(self, err) -> None:
         if err == QProcess.ProcessError.FailedToStart:
-            self._finish(FAILED, error="yt-dlp를 실행하지 못했어요. [도구 상태]에서 다시 설치해 주세요.")
+            self._finish(FAILED, error=tr("yt-dlp를 실행하지 못했어요. [도구 상태]에서 다시 설치해 주세요."))
 
     def _on_finished(self, exit_code: int, exit_status) -> None:
         for line in self._out.flush():
@@ -322,12 +323,12 @@ class DownloadJob(QObject):
         self.error = error
         if state == DONE:
             self.fraction = 1.0
-            self.detail = "이미 받은 파일이 있어서 건너뛰었어요" if self.skipped else "완료"
+            self.detail = tr("이미 받은 파일이 있어서 건너뛰었어요") if self.skipped else tr("완료")
             self.partial_files.clear()
         elif state == CANCELED:
-            self.detail = "취소됨 (다시 시도하면 이어받아요)"
+            self.detail = tr("취소됨 (다시 시도하면 이어받아요)")
         else:
-            self.detail = error or "실패"
+            self.detail = error or tr("실패")
         if self._proc is not None:
             self._proc.deleteLater()
             self._proc = None

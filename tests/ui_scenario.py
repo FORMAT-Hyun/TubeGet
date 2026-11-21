@@ -10,6 +10,7 @@ from pathlib import Path
 
 home = tempfile.mkdtemp(prefix="tubeget-ui-")
 os.environ["TUBEGET_HOME"] = home
+os.environ.setdefault("TUBEGET_LANG", "ko")   # 화면 글 비교는 한국어 기준
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 base, srv, shots = sys.argv[1].rstrip("/"), sys.argv[2], Path(sys.argv[3])
@@ -84,9 +85,9 @@ from tubegetapp import APP_VERSION  # noqa: E402
 from tubegetapp.ui.about_dialog import AboutDialog  # noqa: E402
 check(APP_VERSION in w.about_btn.text(), "상태 표시줄에 앱 버전 버튼: " + w.about_btn.text())
 _ab = AboutDialog(w.deps, w); _ab.show(); app.processEvents()
-check("0.1.1" in _ab.version.text() and "베타" in _ab.version.text(), "앱 정보 창에 버전/단계: " + _ab.version.text())
+check("0.1.2" in _ab.version.text() and "베타" in _ab.version.text(), "앱 정보 창에 버전/단계: " + _ab.version.text())
 _ab._copy()
-check(QGuiApplication.clipboard().text().startswith("TubeGet 0.1.1"), "정보 복사 → 클립보드")
+check(QGuiApplication.clipboard().text().startswith("TubeGet 0.1.2"), "정보 복사 → 클립보드")
 shot("u00_about")
 _ab.close(); _ab.deleteLater()
 
