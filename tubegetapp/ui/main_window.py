@@ -20,7 +20,7 @@ from ..core.fetcher import InfoFetcher
 from ..core.history import History
 from ..core.installer import DepsChecker, YtdlpUpdater, cleanup_old_files
 from ..core.metadata import MediaInfo
-from ..core.options import (AUDIO_FORMATS, HEIGHT_CHOICES, VIDEO_CONTAINERS, DownloadOptions,
+from ..core.options import (AUDIO_FORMATS, AUDIO_QUALITIES, LOSSY_AUDIO, HEIGHT_CHOICES, VIDEO_CONTAINERS, DownloadOptions,
                             height_label)
 from ..core.queue import QueueManager
 from ..core.queue_store import load_jobs, save_jobs
@@ -406,6 +406,13 @@ class MainWindow(QMainWindow):
     def _fill_quality_combo(self) -> None:
         self.quality.blockSignals(True)
         self.quality.clear()
+        if self.mode.value() == "audio":
+            self._fill_audio_quality()
+            self.quality.blockSignals(False)
+            return
+        self.l_quality.setText(tr("화질"))
+        self.quality.setEnabled(True)
+        self.quality.setToolTip("")
         info = self.info
         heights = info.heights if (info and info.kind == "video" and info.heights) else HEIGHT_CHOICES
         best_size = info.estimated_size(0) if (info and info.kind == "video") else None
@@ -427,11 +434,20 @@ class MainWindow(QMainWindow):
         self.quality.setCurrentIndex(max(0, idx))
         self.quality.blockSignals(False)
 
+    def _fill_audio_quality(self) -> None:
+        """음원일 때는 같은 칸이 '음질'이 된다 (설정 창에 있던 것을 툴바로 옮김)."""
+        self.l_quality.setText(tr("음질"))
+        for key, label in AUDIO_QUALITIES:
+            self.quality.addChip(label, key, short=tr("최고") if key == "0" else label.replace(" kbps", "k"))
+        self.quality.setCurrentIndex(max(0, self.quality.findData(self.settings.audio_quality or "0")))
+        lossy = self.settings.audio_format in LOSSY_AUDIO
+        # FLAC·WAV·원본은 음질을 고를 게 없다
+        self.quality.setEnabled(lossy)
+        self.quality.setToolTip("" if lossy else tr("무손실·원본 형식은 음질을 고르지 않아요"))
+
     def _update_mode_enabled(self) -> None:
-        video = self.mode.value() == "video"
-        # 음원은 화질이 없어서 숨김 (음질은 설정 창에서)
         for w in (self.quality, self.l_quality):
-            w.setVisible(video)
+            w.setVisible(True)
         for w in (self.b_tags, self.l_tags):
             w.setVisible(True)
         self._update_tags_button()
@@ -442,6 +458,7 @@ class MainWindow(QMainWindow):
         self.settings.mode = mode
         self.settings.save()
         self._fill_format_combo()
+        self._fill_quality_combo()
         self._update_mode_enabled()
 
     def _on_option_changed(self, *_args) -> None:
@@ -449,16 +466,28 @@ class MainWindow(QMainWindow):
             return
         s = self.settings
         if self.mode.value() == "audio":
-            s.audio_format = self.fmt.currentData() or "mp3"
+            fmt = self.fmt.currentData() or "mp3"
+            if self.sender() is self.quality:
+                s.audio_quality = str(self.quality.currentData() or "0")
+            s.audio_format = fmt
+            s.save()
+            if self.sender() is self.fmt:
+                self._fill_quality_combo()   # 무손실 형식이면 음질 칸을 끈다
         else:
             s.container = self.fmt.currentData() or "mp4"
             s.max_height = int(self.quality.currentData() or 0)
-        s.save()
+            s.save()
         self._update_estimate()
+
+    def _video_height(self) -> int:
+        """영상 화질 (음원 모드에서는 화질 칸이 음질이라 저장된 값을 쓴다)."""
+        if self.mode.value() == "audio":
+            return int(self.settings.max_height or 0)
+        return int(self.quality.currentData() or 0)
 
     def _update_estimate(self) -> None:
         mode = self.mode.value()
-        height = int(self.quality.currentData() or 0)
+        height = self._video_height()
         for r in self._ready:
             r.update_estimate(mode, height)
 
@@ -869,7 +898,7 @@ class MainWindow(QMainWindow):
             return None
         return DownloadOptions(
             mode=self.mode.value(),
-            max_height=int(self.quality.currentData() or 0),
+            max_height=self._video_height(),
             container=s.container,
             compat_h264=s.compat_h264,
             audio_format=s.audio_format,

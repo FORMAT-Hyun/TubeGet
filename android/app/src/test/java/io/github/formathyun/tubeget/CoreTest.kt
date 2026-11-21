@@ -107,6 +107,75 @@ class CoreTest {
     }
 
     @Test
+    fun dubAndSubtitleArgsMatchPc() {
+        val v = Args.download(DownloadOptions(dubLang = "en", subLangs = "ko,en", subMode = "embed"), "/o", "/t")
+        assertEquals("bv*+ba[language^=en]/bv*+ba/b", v[v.indexOf("-f") + 1])
+        assertEquals("ko,en", v[v.indexOf("--sub-langs") + 1])
+        assertTrue("--embed-subs" in v && "no-keep-subs" in v && "--convert-subs" !in v)
+
+        val both = Args.download(DownloadOptions(subLangs = "ko", subMode = "both"), "/o", "/t")
+        assertTrue("--embed-subs" in both && "--convert-subs" in both && "no-keep-subs" !in both)
+
+        val audio = Args.download(DownloadOptions(mode = "audio", dubLang = "ja", subLangs = "ko"), "/o", "/t")
+        assertEquals("ba[language^=ja]/ba/b", audio[audio.indexOf("-f") + 1])
+        assertTrue("--embed-subs" !in audio && "--convert-subs" in audio)
+    }
+
+    @Test
+    fun audioQualityArgs() {
+        val a = Args.download(DownloadOptions(mode = "audio", audioFormat = "mp3", audioQuality = "192K"), "/o", "/t")
+        assertEquals("192K", a[a.indexOf("--audio-quality") + 1])
+        val flac = Args.download(DownloadOptions(mode = "audio", audioFormat = "flac", audioQuality = "192K"), "/o", "/t")
+        assertTrue("--audio-quality" !in flac)
+    }
+
+    @Test
+    fun tagArgs() {
+        val custom = Args.download(
+            DownloadOptions(mode = "audio", tagValues = mapOf("title" to "Way Less Sad", "artist" to "AJR", "album" to "")),
+            "/o", "/t",
+        )
+        assertTrue("#Way Less Sad:#(?P<meta_title>.*)" in custom)
+        assertTrue(":(?P<meta_album>)" in custom)
+
+        val off = Args.download(DownloadOptions(mode = "audio", embedMetadata = false), "/o", "/t")
+        assertTrue("--embed-metadata" !in off && "ExtractAudio:-map_metadata -1" in off)
+
+        val smart = Args.download(DownloadOptions(tagSmart = true), "/o", "/t")
+        assertTrue("--replace-in-metadata" in smart)
+    }
+
+    @Test
+    fun guessesTagsFromTitle() {
+        val info = InfoParser.parse("""{"id":"x","title":"AJR - Way Less Sad (Official Video)","uploader":"AJR","upload_date":"20210304"}""", "u")
+        val t = Tags.guess(info)
+        assertEquals("AJR", t["artist"])
+        assertEquals("Way Less Sad", t["title"])
+        assertEquals("2021", t["year"])
+    }
+
+    @Test
+    fun parsesSubtitlesAndDubs() {
+        val json = """{"id":"d","title":"T",
+            "subtitles":{"ko":[{"ext":"vtt","name":"Korean"}],"live_chat":[{"ext":"json"}]},
+            "automatic_captions":{"en-orig":[{"name":"English (Original)"}],"ja":[{"name":"Japanese"}]},
+            "formats":[
+              {"vcodec":"none","acodec":"opus","language":"en","format_note":"English original, high","abr":130},
+              {"vcodec":"none","acodec":"opus","language":"ko","format_note":"Korean dubbed","abr":130}]}"""
+        val info = InfoParser.parse(json, "u")
+        assertEquals(mapOf("ko" to "Korean"), info.subtitles)
+        assertEquals(setOf("en-orig", "ja"), info.autoCaptions.keys)
+        assertEquals("original", info.dubs["en"])
+        assertEquals("dubbed", info.dubs["ko"])
+    }
+
+    @Test
+    fun optionsRoundTripJson() {
+        val o = DownloadOptions(dubLang = "en", tagValues = mapOf("title" to "A"), outDir = "Documents/TubeGet", subMode = "both")
+        assertEquals(o, DownloadOptions.fromJson(o.toJson()))
+    }
+
+    @Test
     fun sanitizesNames() {
         assertEquals("a_b_c", sanitizeName("a/b:c"))
         assertEquals("TubeGet", sanitizeName("..."))

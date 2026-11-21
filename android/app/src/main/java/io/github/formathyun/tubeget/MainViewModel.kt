@@ -13,7 +13,8 @@ import kotlinx.coroutines.launch
 sealed interface LinkState {
     data object Idle : LinkState
     data class Loading(val url: String) : LinkState
-    data class Loaded(val info: MediaInfo, val selected: Set<Int>) : LinkState
+    /** tags: 이 영상에 넣을 태그 값 (제목에서 추측한 값으로 시작, 카드에서 고칠 수 있음) */
+    data class Loaded(val info: MediaInfo, val selected: Set<Int>, val tags: Map<String, String> = emptyMap()) : LinkState
     data class Error(val url: String, val message: String) : LinkState
 }
 
@@ -37,7 +38,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
         loadJob = viewModelScope.launch {
             _link.value = try {
                 val info = Engine.fetch(url)
-                LinkState.Loaded(info, info.entries.map { it.index }.toSet())
+                LinkState.Loaded(
+                    info, info.entries.map { it.index }.toSet(),
+                    if (info.isPlaylist) emptyMap() else Tags.guess(info),
+                )
             } catch (e: FriendlyException) {
                 LinkState.Error(url, e.message.orEmpty())
             } catch (e: kotlinx.coroutines.CancellationException) {
@@ -45,7 +49,20 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             } catch (e: Exception) {
                 LinkState.Error(url, e.message ?: e.toString())
             }
+            // '바로 받기': 영상 하나면 카드를 거치지 않고 지금 설정으로 바로 받는다 (재생목록은 고르는 화면)
+            val s = _link.value
+            if (s is LinkState.Loaded && !s.info.isPlaylist && Settings.prefs.value.instant) download()
         }
+    }
+
+    fun setTags(values: Map<String, String>) {
+        val s = _link.value as? LinkState.Loaded ?: return
+        _link.value = s.copy(tags = values)
+    }
+
+    fun resetTags() {
+        val s = _link.value as? LinkState.Loaded ?: return
+        _link.value = s.copy(tags = Tags.guess(s.info))
     }
 
     fun retryLoad() {
@@ -84,6 +101,7 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
                 Downloads.add(
                     e.url, e.title, e.thumbnail,
                     base.copy(
+                        tagSmart = prefs.tags,
                         playlistTitle = if (prefs.playlistFolder) info.title else "",
                         index = if (prefs.playlistFolder) e.index else null,
                     ),
@@ -92,9 +110,10 @@ class MainViewModel(app: Application) : AndroidViewModel(app) {
             _messages.tryEmit(ctx.getString(R.string.added_many, picked.size))
         } else {
             // 고른 화질이 이 영상에 없으면 '최고 화질'과 같으니 목록에도 그렇게 보여준다
-            val opts = if (base.maxHeight != 0 && base.maxHeight !in info.heights &&
+            var opts = if (base.maxHeight != 0 && base.maxHeight !in info.heights &&
                 base.maxHeight > (info.heights.maxOrNull() ?: 0)
             ) base.copy(maxHeight = 0) else base
+            if (prefs.tags) opts = opts.copy(tagValues = s.tags)
             Downloads.add(info.url, info.title, info.thumbnail, opts)
             _messages.tryEmit(ctx.getString(R.string.added_one))
         }

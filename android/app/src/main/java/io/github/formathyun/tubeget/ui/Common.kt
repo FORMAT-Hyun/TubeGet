@@ -56,12 +56,17 @@ fun Thumb(url: String?, modifier: Modifier = Modifier, badge: String? = null, co
 
 fun optionSummary(context: Context, o: DownloadOptions): String {
     val base = if (o.mode == "audio") {
-        context.getString(R.string.summary_audio, o.audioFormat.uppercase())
+        context.getString(R.string.summary_audio, o.audioFormat.uppercase()) +
+            if (o.audioFormat in io.github.formathyun.tubeget.LOSSY_AUDIO && o.audioQuality != "0") " · " + o.audioQuality.removeSuffix("K") + "k" else ""
     } else {
         val q = if (o.maxHeight > 0) heightLabel(o.maxHeight).substringBefore(' ') else context.getString(R.string.best)
         context.getString(R.string.summary_video, q, o.container.uppercase())
     }
-    return if (o.subLangs.isNotBlank()) base + " · " + context.getString(R.string.summary_subs, o.subLangs) else base
+    val parts = mutableListOf(base)
+    if (o.subLangs.isNotBlank()) parts += context.getString(R.string.summary_subs, o.subLangs)
+    if (o.dubLang.isNotBlank()) parts += context.getString(R.string.dub_short, o.dubLang)
+    if (!o.embedMetadata) parts += context.getString(R.string.summary_no_tags)
+    return parts.joinToString(" · ")
 }
 
 fun statusLine(context: Context, item: DownloadItem): String = when (item.status) {

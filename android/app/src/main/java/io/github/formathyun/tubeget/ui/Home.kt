@@ -71,6 +71,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.formathyun.tubeget.AUDIO_FORMATS
+import io.github.formathyun.tubeget.AUDIO_QUALITIES
+import io.github.formathyun.tubeget.LOSSY_AUDIO
 import io.github.formathyun.tubeget.DownloadItem
 import io.github.formathyun.tubeget.Downloads
 import io.github.formathyun.tubeget.Engine
@@ -116,7 +118,7 @@ fun HomeScreen(vm: MainViewModel, padding: PaddingValues) {
             is LinkState.Loading -> item { LoadingCard(s.url, onCancel = vm::dismiss) }
             is LinkState.Error -> item { ErrorCard(s, onRetry = vm::retryLoad, onClose = vm::dismiss) }
             is LinkState.Loaded -> {
-                item { MediaCard(s.info, vm) }
+                item { MediaCard(s, vm) }
                 if (s.info.isPlaylist) {
                     item {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -216,6 +218,7 @@ private fun LinkInput(vm: MainViewModel) {
             Spacer(Modifier.width(10.dp))
             Text(stringResource(R.string.paste_link), fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
         }
+        InstantRow()
         OutlinedTextField(
             value = text,
             onValueChange = { text = it },
@@ -305,7 +308,8 @@ private fun ErrorCard(s: LinkState.Error, onRetry: () -> Unit, onClose: () -> Un
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
-private fun MediaCard(info: MediaInfo, vm: MainViewModel) {
+private fun MediaCard(link: LinkState.Loaded, vm: MainViewModel) {
+    val info = link.info
     val prefs by Settings.prefs.collectAsState()
     Card(colors = CardDefaults.cardColors(containerColor = TG.Surface), shape = RoundedCornerShape(16.dp)) {
         Column(Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -370,6 +374,20 @@ private fun MediaCard(info: MediaInfo, vm: MainViewModel) {
                     }
                 }
             } else {
+                // 음질 (PC 판 툴바와 같음). FLAC 은 무손실이라 고를 게 없다
+                Section(stringResource(R.string.audio_quality)) {
+                    val lossy = prefs.audioFormat in LOSSY_AUDIO
+                    AUDIO_QUALITIES.forEach { q ->
+                        Choice(
+                            if (q == "0") stringResource(R.string.audio_quality_best) else q.removeSuffix("K") + " kbps",
+                            selected = lossy && prefs.audioQuality == q,
+                            enabled = lossy,
+                        ) { Settings.update { it.copy(audioQuality = q) } }
+                    }
+                }
+                if (prefs.audioFormat !in LOSSY_AUDIO) {
+                    Text(stringResource(R.string.audio_quality_lossless), color = TG.Muted, fontSize = 12.sp)
+                }
                 Section(stringResource(R.string.format)) {
                     AUDIO_FORMATS.forEach { f ->
                         val size = if (f == "mp3" || f == "flac") "" else formatBytes(info.audioSize)
@@ -380,6 +398,9 @@ private fun MediaCard(info: MediaInfo, vm: MainViewModel) {
                     }
                 }
             }
+
+            // 저장 위치 / 자막·더빙 / 태그 (PC 판 툴바와 같은 항목)
+            CardOptionRows(info, link, vm)
 
             if (!info.isPlaylist) {
                 Button(
@@ -408,17 +429,18 @@ private fun Section(title: String, content: @Composable () -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun Choice(text: String, selected: Boolean, onClick: () -> Unit) {
+private fun Choice(text: String, selected: Boolean, enabled: Boolean = true, onClick: () -> Unit) {
     FilterChip(
         selected = selected,
         onClick = onClick,
+        enabled = enabled,
         label = { Text(text, fontSize = 13.sp) },
         colors = FilterChipDefaults.filterChipColors(
             selectedContainerColor = TG.AccentSoft,
             selectedLabelColor = TG.AccentText,
         ),
         border = FilterChipDefaults.filterChipBorder(
-            enabled = true, selected = selected,
+            enabled = enabled, selected = selected,
             borderColor = TG.BorderStrong, selectedBorderColor = TG.Accent,
         ),
     )
@@ -514,4 +536,30 @@ private fun ErrorDetailDialog(item: DownloadItem, onDismiss: () -> Unit) {
         },
         containerColor = TG.Surface,
     )
+}
+
+/** '바로 받기' 스위치: 켜면 링크를 불러오자마자 지금 설정으로 받는다 (PC 판 툴바와 같음) */
+@Composable
+private fun InstantRow() {
+    val prefs by Settings.prefs.collectAsState()
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable { Settings.update { it.copy(instant = !it.instant) } }
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(stringResource(R.string.instant), fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            Text(
+                stringResource(if (prefs.instant) R.string.instant_on_desc else R.string.instant_off_desc),
+                color = TG.Muted, fontSize = 12.sp,
+            )
+        }
+        androidx.compose.material3.Switch(
+            checked = prefs.instant,
+            onCheckedChange = { v -> Settings.update { it.copy(instant = v) } },
+            colors = androidx.compose.material3.SwitchDefaults.colors(checkedTrackColor = TG.Accent),
+        )
+    }
 }

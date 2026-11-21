@@ -107,25 +107,9 @@ fun SettingsScreen(padding: PaddingValues) {
                     stringResource(R.string.compat_h264), stringResource(R.string.compat_h264_desc), prefs.compatH264,
                 ) { v -> Settings.update { it.copy(compatH264 = v) } }
                 Toggle(
-                    stringResource(R.string.embed_meta), stringResource(R.string.embed_meta_desc), prefs.embedMetadata,
-                ) { v -> Settings.update { it.copy(embedMetadata = v, embedThumbnail = v) } }
-                Toggle(
                     stringResource(R.string.playlist_folder), null, prefs.playlistFolder,
                 ) { v -> Settings.update { it.copy(playlistFolder = v) } }
-                Toggle(
-                    stringResource(R.string.subtitles), stringResource(R.string.subtitles_desc), prefs.subtitles,
-                ) { v -> Settings.update { it.copy(subtitles = v) } }
-                if (prefs.subtitles) {
-                    OutlinedTextField(
-                        value = prefs.subLangs,
-                        onValueChange = { t -> Settings.update { it.copy(subLangs = t.replace(" ", "")) } },
-                        label = { Text(stringResource(R.string.sub_langs)) },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(10.dp),
-                    )
-                }
-                Text(stringResource(R.string.saved_in, "Download/TubeGet"), color = TG.Muted, fontSize = 13.sp)
+                Text(stringResource(R.string.card_options_note), color = TG.Muted, fontSize = 13.sp)
             }
         }
 
@@ -167,23 +151,26 @@ fun SettingsScreen(padding: PaddingValues) {
         item {
             Group(stringResource(R.string.about)) {
                 Text(stringResource(R.string.app_version, BuildConfig.VERSION_NAME), fontWeight = FontWeight.SemiBold)
+                fun open(url: String) = runCatching {
+                    ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                }
+                // GitHub 저장소: 소스, 새 버전(릴리스), 문제 신고
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { open(REPO_URL) }) { Text(stringResource(R.string.github_repo)) }
+                    OutlinedButton(onClick = { open("$REPO_URL/releases") }) { Text(stringResource(R.string.github_releases)) }
+                }
                 Text(
-                    "github.com/FORMAT-Hyun/TubeGet",
-                    color = TG.AccentText, fontSize = 14.sp,
-                    modifier = Modifier.clickable {
-                        runCatching {
-                            ctx.startActivity(
-                                Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/FORMAT-Hyun/TubeGet"))
-                                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                            )
-                        }
-                    },
+                    REPO_URL.removePrefix("https://"),
+                    color = TG.AccentText, fontSize = 13.sp,
+                    modifier = Modifier.clickable { open(REPO_URL) },
                 )
                 Text(stringResource(R.string.licenses), color = TG.Muted, fontSize = 12.sp)
             }
         }
     }
 }
+
+const val REPO_URL = "https://github.com/FORMAT-Hyun/TubeGet"
 
 @Composable
 private fun segColors() = SegmentedButtonDefaults.colors(

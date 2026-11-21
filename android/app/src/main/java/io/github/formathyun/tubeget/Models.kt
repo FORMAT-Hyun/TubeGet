@@ -18,6 +18,16 @@ data class MediaInfo(
     val audioSize: Long?,
     val isPlaylist: Boolean = false,
     val entries: List<PlaylistEntry> = emptyList(),
+    /** 올린 자막: 코드 → 이름 */
+    val subtitles: Map<String, String> = emptyMap(),
+    /** 자동 생성·번역 자막: 코드 → 이름 */
+    val autoCaptions: Map<String, String> = emptyMap(),
+    /** 음성 트랙 언어: 코드 → "original" | "dubbed" | "" */
+    val dubs: Map<String, String> = emptyMap(),
+    val track: String = "",
+    val artist: String = "",
+    val album: String = "",
+    val year: String = "",
 )
 
 data class PlaylistEntry(
@@ -74,6 +84,7 @@ object InfoParser {
         val videos = mutableListOf<F>()
         var bestAudio: Long? = null
         var bestAbr = -1.0
+        val dubs = linkedMapOf<String, String>()
         for (i in 0 until formats.length()) {
             val f = formats.optJSONObject(i) ?: continue
             val vcodec = f.str("vcodec")
@@ -89,6 +100,14 @@ object InfoParser {
                 val dim = if (w > 0 && h > 0) minOf(w, h) else h
                 if (dim > 0) videos += F(dim, size, vcodec, tbr)
             } else if (acodec != null) {
+                val lang = f.str("language")
+                if (lang != null && lang != "und") {
+                    val note = f.optString("format_note", "").lowercase()
+                    when {
+                        "original" in note -> dubs[lang] = "original"
+                        lang !in dubs -> dubs[lang] = if ("dubbed" in note) "dubbed" else ""
+                    }
+                }
                 val abr = f.num("abr") ?: tbr
                 if (abr > bestAbr) {
                     bestAbr = abr; bestAudio = size
@@ -121,7 +140,32 @@ object InfoParser {
             heights = heights,
             videoSizes = sizes,
             audioSize = bestAudio,
+            subtitles = subNames(o.optJSONObject("subtitles")),
+            autoCaptions = subNames(o.optJSONObject("automatic_captions")),
+            dubs = if (dubs.size > 1) dubs else emptyMap(), // 음성이 하나뿐이면 고를 게 없다
+            track = o.str("track") ?: "",
+            artist = o.str("artist") ?: o.str("creator") ?: "",
+            album = o.str("album") ?: "",
+            year = (if (o.has("release_year") && !o.isNull("release_year")) o.optInt("release_year").toString() else null)
+                ?: o.str("upload_date")?.take(4) ?: "",
         )
+    }
+
+    private fun subNames(raw: JSONObject?): Map<String, String> {
+        if (raw == null) return emptyMap()
+        val out = linkedMapOf<String, String>()
+        for (code in raw.keys()) {
+            if (code.isBlank() || code == "live_chat") continue
+            val arr = raw.optJSONArray(code) ?: continue
+            if (arr.length() == 0) continue
+            var name = ""
+            for (i in 0 until arr.length()) {
+                val n = arr.optJSONObject(i)?.str("name")
+                if (n != null) { name = n; break }
+            }
+            out[code] = name
+        }
+        return out
     }
 
     private fun parsePlaylist(o: JSONObject, url: String): MediaInfo {

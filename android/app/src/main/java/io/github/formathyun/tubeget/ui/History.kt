@@ -87,7 +87,7 @@ fun HistoryScreen(padding: PaddingValues) {
         items(done, key = { it.id }) { HistoryRow(it) }
         item {
             Text(
-                stringResource(R.string.saved_in, "Download/TubeGet"),
+                stringResource(R.string.saved_in, io.github.formathyun.tubeget.Settings.prefs.value.outDir),
                 color = TG.Placeholder, fontSize = 12.sp,
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 textAlign = TextAlign.Center,

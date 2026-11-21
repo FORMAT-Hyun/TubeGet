@@ -62,7 +62,7 @@ From 0.1.5 there is also an Android app with a phone-friendly UI (Android 7.0 or
 
 1. From [Releases](https://github.com/FORMAT-Hyun/TubeGet/releases), download `TubeGet-<version>-Android-arm64.apk` (almost every phone). Very old 32-bit phones need `-armv7.apk`.
 2. Open the file and allow "Install unknown apps" for your browser or file manager when asked.
-3. In the YouTube app, tap **Share → TubeGet**, or copy a link and tap **[Paste link]**. Pick video/audio, quality and format, then tap **[Download]**.
+3. In the YouTube app, tap **Share → TubeGet**, or copy a link and tap **[Paste link]**. On the video card, pick video/audio, quality (bitrate for audio), format, save location, subtitles/dubbing and tags, then tap **[Download]**. With **Instant download** on, it starts right away.
 
 - Files are saved to `Download/TubeGet` and show up in your gallery and music apps.
 - yt-dlp, Python and FFmpeg are included in the app. yt-dlp updates itself once a day (or from Settings).
@@ -72,7 +72,7 @@ From 0.1.5 there is also an Android app with a phone-friendly UI (Android 7.0 or
 ## Usage
 
 1. Copy a YouTube link and click the red **[Paste link]** button at the top. Press Ctrl+L to type a link, or drag one onto the window.
-2. In the toolbar, choose the download type (video/audio), quality, format, save location, subtitles/dubbing and tags.
+2. In the toolbar, choose the download type (video/audio), quality (bitrate for audio), format, save location, subtitles/dubbing and tags.
 3. A video card (thumbnail, info, estimated size) appears at the top of the list. Click **[Download]** on the card. You can load several links and set options per card.
 
 With [Instant] on, steps 2 and 3 are skipped.

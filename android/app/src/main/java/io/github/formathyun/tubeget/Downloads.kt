@@ -198,7 +198,7 @@ object Downloads {
     private fun tempDir(id: String) = File(app.cacheDir, "dl/$id")
 
     private fun run(item: DownloadItem) {
-        val out = Settings.outputDir()
+        val out = Settings.dirFor(item.options.outDir)
         val tmp = tempDir(item.id)
         out.mkdirs(); tmp.mkdirs()
         edit(item.id, persist = true) { it.copy(status = Status.RUNNING, progress = null, error = null) }

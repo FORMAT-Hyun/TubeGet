@@ -5,9 +5,17 @@ import org.json.JSONObject
 val VIDEO_CONTAINERS = listOf("mp4", "mkv", "webm")
 val AUDIO_FORMATS = listOf("mp3", "m4a", "opus", "flac")
 
-private val LOSSY_AUDIO = setOf("mp3", "m4a", "opus")
+/** 음질: yt-dlp --audio-quality 값 (0 = 최고 VBR). PC 판 AUDIO_QUALITIES 와 같음 */
+val AUDIO_QUALITIES = listOf("0", "320K", "192K", "128K")
+
+val LOSSY_AUDIO = setOf("mp3", "m4a", "opus")
 private val THUMB_AUDIO = setOf("mp3", "m4a", "opus", "flac")
 private val THUMB_VIDEO = setOf("mp4", "mkv")
+
+const val DEFAULT_OUT_DIR = "Download/TubeGet"
+
+/** 고를 수 있는 저장 위치 (Android 11 이상에서 앱이 바로 쓸 수 있는 공용 폴더) */
+val OUT_DIR_CHOICES = listOf("Download/TubeGet", "Download", "Documents/TubeGet")
 
 /** 다운로드 한 건의 옵션. PC 판 tubegetapp/core/options.py 와 같은 규칙으로 yt-dlp 인자를 만든다. */
 data class DownloadOptions(
@@ -15,17 +23,32 @@ data class DownloadOptions(
     val maxHeight: Int = 0,              // 0 = 최고 화질
     val container: String = "mp4",
     val audioFormat: String = "mp3",
+    val audioQuality: String = "0",    // 음질 (MP3/M4A/Opus)
     val compatH264: Boolean = true,      // 휴대폰 갤러리에서 잘 열리는 H.264 우선
-    val subLangs: String = "",           // 비면 자막 없음
+    val subLangs: String = "",           // 받을 자막 언어 코드 (쉼표). 비면 자막 없음
+    val autoSubs: Boolean = true,        // 자동 생성·번역 자막 허용
+    val subMode: String = "embed",       // embed(영상에 넣기) | file(.srt 따로) | both
+    val dubLang: String = "",            // 더빙(음성 언어) 코드. 비면 원본 음성
     val embedThumbnail: Boolean = true,
-    val embedMetadata: Boolean = true,
+    val embedMetadata: Boolean = true,   // 태그 넣기 (끄면 태그 없는 깨끗한 파일)
+    val tagValues: Map<String, String>? = null, // 직접 정한 태그 값
+    val tagSmart: Boolean = false,       // 재생목록: 영상마다 '아티스트 - 곡명' 자동 정리
+    val outDir: String = DEFAULT_OUT_DIR, // 저장소 기준 상대 경로 (예: Download/TubeGet)
     val playlistTitle: String = "",      // 재생목록이면 그 이름의 폴더에 저장
     val index: Int? = null,              // 재생목록 번호 (파일명 앞)
 ) {
+    val hasSubs get() = subLangs.isNotBlank()
+
+    /** 오디오에는 자막을 넣을 수 없으니 파일로만 */
+    fun effectiveSubMode(): String = if (mode == "audio") "file" else subMode
+
     fun toJson(): JSONObject = JSONObject().apply {
         put("mode", mode); put("maxHeight", maxHeight); put("container", container)
-        put("audioFormat", audioFormat); put("compatH264", compatH264); put("subLangs", subLangs)
+        put("audioFormat", audioFormat); put("audioQuality", audioQuality); put("compatH264", compatH264); put("subLangs", subLangs)
+        put("autoSubs", autoSubs); put("subMode", subMode); put("dubLang", dubLang)
         put("embedThumbnail", embedThumbnail); put("embedMetadata", embedMetadata)
+        tagValues?.let { put("tagValues", JSONObject(it)) }
+        put("tagSmart", tagSmart); put("outDir", outDir)
         put("playlistTitle", playlistTitle); if (index != null) put("index", index)
     }
 
@@ -37,10 +60,19 @@ data class DownloadOptions(
                 maxHeight = o.optInt("maxHeight", 0),
                 container = o.optString("container", "mp4"),
                 audioFormat = o.optString("audioFormat", "mp3"),
+                audioQuality = o.optString("audioQuality", "0"),
                 compatH264 = o.optBoolean("compatH264", true),
                 subLangs = o.optString("subLangs", ""),
+                autoSubs = o.optBoolean("autoSubs", true),
+                subMode = o.optString("subMode", "embed"),
+                dubLang = o.optString("dubLang", ""),
                 embedThumbnail = o.optBoolean("embedThumbnail", true),
                 embedMetadata = o.optBoolean("embedMetadata", true),
+                tagValues = o.optJSONObject("tagValues")?.let { t ->
+                    t.keys().asSequence().associateWith { k -> t.optString(k) }
+                },
+                tagSmart = o.optBoolean("tagSmart", false),
+                outDir = o.optString("outDir", DEFAULT_OUT_DIR),
                 playlistTitle = o.optString("playlistTitle", ""),
                 index = if (o.has("index")) o.optInt("index") else null,
             )
@@ -95,13 +127,18 @@ object Args {
             "-o", outputTemplate(opts),
         )
 
+        val dub = dubSelector(opts.dubLang)
         if (opts.mode == "audio") {
-            a += listOf("-f", "ba/b", "-x")
+            a += listOf("-f", if (dub.isNotEmpty()) "ba$dub/ba/b" else "ba/b", "-x")
             a += listOf("--audio-format", opts.audioFormat)
-            if (opts.audioFormat in LOSSY_AUDIO) a += listOf("--audio-quality", "0")
+            if (opts.audioFormat in LOSSY_AUDIO) a += listOf("--audio-quality", opts.audioQuality.ifBlank { "0" })
             if (opts.embedMetadata) {
                 if (opts.embedThumbnail && opts.audioFormat in THUMB_AUDIO) a += "--embed-thumbnail"
                 a += "--embed-metadata"
+                a += tagArgs(opts)
+            } else {
+                // 원본에 붙어 있던 정보까지 모두 비운 깨끗한 파일
+                a += listOf("--postprocessor-args", "ExtractAudio:-map_metadata -1")
             }
         } else {
             // 휴대폰에서는 고른 화질을 먼저 맞추고, 같은 화질 안에서 H.264 를 고른다
@@ -114,22 +151,48 @@ object Args {
                 "mp4" -> sort += "ext:mp4:m4a"
                 "webm" -> sort += "ext:webm:webm"
             }
-            a += listOf("-f", "bv*+ba/b")
+            a += listOf("-f", if (dub.isNotEmpty()) "bv*+ba$dub/bv*+ba/b" else "bv*+ba/b")
             if (sort.isNotEmpty()) a += listOf("-S", sort.joinToString(","))
             a += listOf("--merge-output-format", opts.container)
             if (opts.embedThumbnail && opts.container in THUMB_VIDEO) a += "--embed-thumbnail"
-            if (opts.embedMetadata) a += "--embed-metadata"
-        }
-
-        val langs = opts.subLangs.split(',').map { it.trim() }.filter { it.isNotEmpty() }
-        if (langs.isNotEmpty()) {
-            a += listOf("--write-subs", "--write-auto-subs", "--sub-langs", langs.joinToString(","))
-            if (opts.mode == "video") {
-                a += listOf("--embed-subs", "--compat-options", "no-keep-subs")
-            } else {
-                a += listOf("--convert-subs", "srt")
+            if (opts.embedMetadata) {
+                a += "--embed-metadata"
+                a += tagArgs(opts)
             }
         }
+        a += subtitleArgs(opts)
+        return a
+    }
+
+    private fun tagArgs(opts: DownloadOptions): List<String> = when {
+        opts.tagValues != null -> Tags.customArgs(opts.tagValues)
+        opts.tagSmart -> Tags.smartArgs()
+        else -> emptyList()
+    }
+
+    /** 음성 트랙 선택 조건. 그 언어 트랙이 없는 영상은 원본 음성으로 받는다. */
+    fun dubSelector(lang: String): String {
+        val l = lang.trim().filter { it.isLetterOrDigit() || it == '-' || it == '_' }
+        return if (l.isNotEmpty()) "[language^=$l]" else ""
+    }
+
+    /**
+     * 자막 인자 (PC 판 subtitle_args 와 같음).
+     * --write-subs 를 항상 넘기고, '넣기만'일 때는 no-keep-subs 로 자막 파일을 지우게 한다.
+     */
+    fun subtitleArgs(opts: DownloadOptions): List<String> {
+        val langs = opts.subLangs.split(',').map { it.trim() }.filter { it.isNotEmpty() }
+        if (langs.isEmpty()) return emptyList()
+        val a = mutableListOf("--write-subs", "--sub-langs", langs.joinToString(","))
+        if (opts.autoSubs) a += "--write-auto-subs"
+        val mode = opts.effectiveSubMode()
+        val embed = mode in setOf("embed", "both") && opts.container in setOf("mp4", "mkv", "webm")
+        if (embed) {
+            a += "--embed-subs"
+            if (mode == "embed") a += listOf("--compat-options", "no-keep-subs")
+        }
+        // WebM 은 vtt 자막만 넣을 수 있어서 '둘 다'일 때는 vtt 그대로 둔다
+        if (mode in setOf("file", "both") && !(embed && opts.container == "webm")) a += listOf("--convert-subs", "srt")
         return a
     }
 
