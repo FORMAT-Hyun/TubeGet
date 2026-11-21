@@ -121,7 +121,7 @@ class PlaylistDialog(QDialog):
     def _apply_range(self) -> None:
         picked = _parse_ranges(self.range_edit.text(), len(self.info.entries))
         if picked is None:
-            self.range_edit.setStyleSheet("border-color: #d33a3a;")
+            self.range_edit.setStyleSheet("border-color: #ff6b6b;")
             return
         self.range_edit.setStyleSheet("")
         for item in self._items():

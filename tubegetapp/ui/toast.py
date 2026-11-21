@@ -9,10 +9,10 @@ from PySide6.QtWidgets import (QFrame, QGraphicsDropShadowEffect, QHBoxLayout, Q
                                QWidget)
 
 from . import icons
-from .theme import DANGER, GREEN, WARNING
+from .theme import DANGER, SUCCESS, WARNING
 from .widgets import icon_button
 
-_COLORS = {"ok": GREEN, "error": DANGER, "warn": WARNING}
+_COLORS = {"ok": SUCCESS, "error": DANGER, "warn": WARNING}
 _ICONS = {"ok": "check_circle", "error": "error_circle", "warn": "error_circle"}
 TOAST_WIDTH = 320
 MARGIN = 16
@@ -42,14 +42,14 @@ class Toast(QFrame):
         shadow = QGraphicsDropShadowEffect(self)
         shadow.setBlurRadius(24)
         shadow.setOffset(0, 4)
-        shadow.setColor(QColor(0, 0, 0, 45))
+        shadow.setColor(QColor(0, 0, 0, 140))
         self.setGraphicsEffect(shadow)
 
         root = QHBoxLayout(self)
         root.setContentsMargins(14, 12, 8, 12)
         root.setSpacing(10)
         ic = QLabel()
-        ic.setPixmap(icons.pixmap(_ICONS.get(kind, "check_circle"), _COLORS.get(kind, GREEN), 22))
+        ic.setPixmap(icons.pixmap(_ICONS.get(kind, "check_circle"), _COLORS.get(kind, SUCCESS), 22))
         ic.setFixedSize(QSize(22, 22))
         root.addWidget(ic, 0, Qt.AlignmentFlag.AlignTop)
 
@@ -74,7 +74,7 @@ class Toast(QFrame):
             col.addWidget(b)
         root.addLayout(col, 1)
 
-        self.btn = icon_button("close", "닫기", color="#8a929b", size=14, box=24)
+        self.btn = icon_button("close", "닫기", color="#9aa0aa", size=14, box=24)
         root.addWidget(self.btn, 0, Qt.AlignmentFlag.AlignTop)
         self.setFixedHeight(self.sizeHint().height())
 

@@ -180,7 +180,7 @@ _ICONS: dict[str, _Draw] = {
 _cache: dict[tuple, QIcon] = {}
 
 
-def pixmap(name: str, color: str = "#5f6670", size: int = 20) -> QPixmap:
+def pixmap(name: str, color: str = "#aab0ba", size: int = 20) -> QPixmap:
     """아이콘을 선명한 QPixmap 으로 (2배 해상도로 그려서 축소 표시)."""
     dpr = 3.0
     pm = QPixmap(int(size * dpr), int(size * dpr))
@@ -195,7 +195,7 @@ def pixmap(name: str, color: str = "#5f6670", size: int = 20) -> QPixmap:
     return pm
 
 
-def icon(name: str, color: str = "#5f6670", size: int = 20) -> QIcon:
+def icon(name: str, color: str = "#aab0ba", size: int = 20) -> QIcon:
     key = (name, color, size)
     ic = _cache.get(key)
     if ic is None:

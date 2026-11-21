@@ -14,7 +14,7 @@ from ..core.options import AUDIO_FORMATS, height_label
 from ..core.runner import CANCELED, DONE, FAILED, QUEUED, RUNNING, DownloadJob
 from ..utils import human_duration, human_size, reveal_in_explorer
 from . import icons
-from .theme import repolish
+from .theme import SURFACE2, repolish
 from .widgets import ElidedLabel, ThumbLoader, icon_button, make_button, rounded, show_log_dialog
 
 THUMB = QSize(72, 40)
@@ -32,9 +32,9 @@ def placeholder_thumb(mode: str) -> QPixmap:
     p.setPen(Qt.PenStyle.NoPen)
     p.setBrush(Qt.GlobalColor.transparent)
     from PySide6.QtGui import QColor
-    p.setBrush(QColor("#eceff2"))
+    p.setBrush(QColor(SURFACE2))
     p.drawRoundedRect(0, 0, THUMB.width(), THUMB.height(), 6, 6)
-    ic = icons.pixmap("music" if mode == "audio" else "video", "#aab1b9", 22)
+    ic = icons.pixmap("music" if mode == "audio" else "video", "#6b717c", 22)
     p.drawPixmap((THUMB.width() - 22) // 2, (THUMB.height() - 22) // 2, ic)
     p.end()
     return pm

@@ -1,9 +1,9 @@
 ﻿; TubeGet 설치 마법사 (Inno Setup 6)
 ; build_installer.bat 이 PyInstaller 빌드 후 자동으로 컴파일합니다.
-; 직접 컴파일: ISCC.exe /DMyAppVersion=0.0.3 installer\TubeGet.iss
+; 직접 컴파일: ISCC.exe /DMyAppVersion=0.0.4 installer\TubeGet.iss
 
 #ifndef MyAppVersion
-  #define MyAppVersion "0.0.3"
+  #define MyAppVersion "0.0.4"
 #endif
 #define MyAppName "TubeGet"
 #define MyAppExe "TubeGet.exe"

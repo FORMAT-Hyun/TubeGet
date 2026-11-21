@@ -35,12 +35,12 @@ from .settings_dialog import SettingsDialog
 from .subtitle_dialog import SubtitleDialog, default_selection, summarize
 from .tag_dialog import TagDialog, TagState
 from . import icons
-from .theme import DANGER, MUTED, WARNING, app_icon, repolish
+from .theme import BORDER, DANGER, ICON, MUTED, WARNING, app_icon, repolish
 from .toast import ToastManager
 from .widgets import (ChipButton, ChipCombo, ElidedLabel, ModeCombo, ThumbLoader, ToggleSwitch, field_label,
-                      icon_button, make_button, rounded, show_log_dialog)
+                      icon_button, make_button, pill_check, rounded, show_log_dialog)
 
-THUMB_SIZE = QSize(160, 90)
+THUMB_SIZE = QSize(176, 99)
 _CHANNEL_RE = re.compile(r"youtube\.com/(?:@[^/?#]+|channel/[^/?#]+|c/[^/?#]+|user/[^/?#]+)/?(?:[?#].*)?$",
                          re.IGNORECASE)
 
@@ -197,8 +197,8 @@ class MainWindow(QMainWindow):
         self.panel = QFrame()
         self.panel.setObjectName("InfoPanel")
         pl = QVBoxLayout(self.panel)
-        pl.setContentsMargins(14, 12, 14, 12)
-        pl.setSpacing(10)
+        pl.setContentsMargins(18, 16, 18, 16)
+        pl.setSpacing(14)
 
         url_row = QHBoxLayout()
         url_row.setSpacing(8)
@@ -209,7 +209,7 @@ class MainWindow(QMainWindow):
         self.url_edit.returnPressed.connect(self._fetch_clicked)
         self.b_fetch = make_button("불러오기", primary=True)
         self.b_fetch.clicked.connect(self._fetch_clicked)
-        self.b_close_panel = icon_button("close", "닫기 (Esc)", color="#6b737c", size=16, box=30)
+        self.b_close_panel = icon_button("close", "닫기 (Esc)", color="#9aa0aa", size=16, box=30)
         self.b_close_panel.clicked.connect(self._close_panel)
         url_row.addWidget(self.url_edit, 1)
         url_row.addWidget(self.b_fetch)
@@ -218,6 +218,7 @@ class MainWindow(QMainWindow):
 
         notice_row = QHBoxLayout()
         notice_row.setSpacing(8)
+        notice_row.setContentsMargins(0, 0, 0, 0)
         self.v_notice = QLabel()
         self.v_notice.setObjectName("Notice")
         self.v_notice.setWordWrap(True)
@@ -228,32 +229,31 @@ class MainWindow(QMainWindow):
         notice_row.addWidget(self.b_fetch_log, 0, Qt.AlignmentFlag.AlignTop)
         self.notice_box = QWidget()
         self.notice_box.setLayout(notice_row)
-        notice_row.setContentsMargins(0, 0, 0, 0)
         pl.addWidget(self.notice_box)
 
+        # 영상 정보: 썸네일(길이 표시) + 제목 + 알약 모양 정보
         self.info_box = QWidget()
         info_row = QHBoxLayout(self.info_box)
-        info_row.setContentsMargins(0, 2, 0, 0)
-        info_row.setSpacing(16)
+        info_row.setContentsMargins(0, 0, 0, 0)
+        info_row.setSpacing(18)
         self.thumb = QLabel()
         self.thumb.setObjectName("Thumb")
         self.thumb.setFixedSize(THUMB_SIZE)
         self.thumb.setAlignment(Qt.AlignmentFlag.AlignCenter)
         info_row.addWidget(self.thumb, 0, Qt.AlignmentFlag.AlignTop)
         meta_col = QVBoxLayout()
-        meta_col.setSpacing(5)
+        meta_col.setSpacing(9)
         self.v_title = QLabel()
         self.v_title.setObjectName("VideoTitle")
         self.v_title.setWordWrap(True)
         self.v_title.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         self.v_title.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
-        self.v_meta = QLabel()
-        self.v_meta.setObjectName("Muted")
-        self.v_meta.setWordWrap(True)
+        self.meta_row = QHBoxLayout()
+        self.meta_row.setSpacing(6)
         self.b_load_playlist = make_button("이 주소의 재생목록 전체 불러오기 →", link=True)
         self.b_load_playlist.clicked.connect(lambda: self.fetch(force_playlist=True))
         meta_col.addWidget(self.v_title)
-        meta_col.addWidget(self.v_meta)
+        meta_col.addLayout(self.meta_row)
         meta_col.addWidget(self.b_load_playlist, 0, Qt.AlignmentFlag.AlignLeft)
         meta_col.addStretch(1)
         info_row.addLayout(meta_col, 1)
@@ -262,65 +262,76 @@ class MainWindow(QMainWindow):
         info_row.addWidget(self.b_collapse, 0, Qt.AlignmentFlag.AlignTop)
         pl.addWidget(self.info_box)
 
+        # 옵션: 알약 버튼 + 구간 자르기
         self.options_box = QWidget()
         ob = QVBoxLayout(self.options_box)
         ob.setContentsMargins(0, 0, 0, 0)
-        ob.setSpacing(10)
+        ob.setSpacing(12)
         line = QFrame()
         line.setObjectName("Divider")
         ob.addWidget(line)
 
+        opt_title = QLabel("이 영상에만 적용")
+        opt_title.setObjectName("SectionLabel")
+        ob.addWidget(opt_title)
         opts = QHBoxLayout()
-        opts.setSpacing(14)
+        opts.setSpacing(8)
         self.b_subs = make_button("자막: 없음", tooltip="이 영상에 있는 자막 중에서 받을 언어와 저장 방식을 골라요")
+        self.b_subs.setProperty("pill", True)
         self.b_subs.clicked.connect(self._choose_subs)
         opts.addWidget(self.b_subs)
         self.b_tags = make_button("태그: 켬", tooltip="음원 파일의 제목·아티스트·앨범·커버 태그를 넣을지, 어떤 값으로 넣을지 골라요")
+        self.b_tags.setProperty("pill", True)
         self.b_tags.clicked.connect(self._choose_tags)
         opts.addWidget(self.b_tags)
-        self.cb_thumb = QCheckBox("썸네일 넣기")
+        self.cb_thumb = pill_check("썸네일 넣기")
         self.cb_thumb.setToolTip("썸네일을 파일 표지로 넣어요 (MP4/MKV/MP3/M4A 등).")
-        self.cb_compat = QCheckBox("편집 호환 (H.264)")
+        self.cb_compat = pill_check("편집 호환 (H.264)")
         self.cb_compat.setToolTip("CapCut·프리미어 같은 편집 프로그램이나 오래된 기기에서 잘 열리도록\n"
                                   "H.264 코덱을 우선해요. 대신 화질이 최대 1080p로 제한될 수 있어요.")
         for cb in (self.cb_thumb, self.cb_compat):
             cb.toggled.connect(self._on_option_changed)
             opts.addWidget(cb)
         opts.addStretch(1)
+        ob.addLayout(opts)
 
         sec = QHBoxLayout()
         sec.setSpacing(8)
         self.sec_start = QLineEdit()
-        self.sec_start.setPlaceholderText("시작 (예: 1:30)")
+        self.sec_start.setPlaceholderText("시작  예: 1:30")
         self.sec_end = QLineEdit()
-        self.sec_end.setPlaceholderText("끝 (예: 2:45)")
+        self.sec_end.setPlaceholderText("끝  예: 2:45")
         for e in (self.sec_start, self.sec_end):
-            e.setMaximumWidth(130)
+            e.setFixedWidth(128)
             e.textChanged.connect(self._validate_sections)
         tilde = QLabel("~")
         tilde.setObjectName("Muted")
-        sec_hint = QLabel("비워두면 전체")
+        sec_hint = QLabel("비워두면 영상 전체")
         sec_hint.setObjectName("Small")
-        sec.addWidget(field_label("구간 자르기"))
-        sec.addSpacing(4)
+        sec_label = QLabel("구간 자르기")
+        sec_label.setObjectName("Muted")
+        sec.addWidget(sec_label)
+        sec.addSpacing(6)
         sec.addWidget(self.sec_start)
         sec.addWidget(tilde)
         sec.addWidget(self.sec_end)
         sec.addSpacing(6)
         sec.addWidget(sec_hint)
         sec.addStretch(1)
-        ob.addLayout(opts)
         ob.addLayout(sec)
         pl.addWidget(self.options_box)
 
+        # 아래: 예상 크기 + 다운로드 버튼
         self.action_box = QWidget()
         action = QHBoxLayout(self.action_box)
         action.setContentsMargins(0, 0, 0, 0)
         self.est_label = QLabel()
         self.est_label.setObjectName("Muted")
         self.b_download = make_button("다운로드", primary=True)
-        self.b_download.setMinimumWidth(170)
-        self.b_download.setMinimumHeight(38)
+        self.b_download.setIcon(icons.icon("download", "#ffffff", 18))
+        self.b_download.setIconSize(QSize(18, 18))
+        self.b_download.setMinimumWidth(190)
+        self.b_download.setMinimumHeight(42)
         self.b_download.clicked.connect(self.add_download)
         action.addWidget(self.est_label, 1)
         action.addWidget(self.b_download)
@@ -331,7 +342,7 @@ class MainWindow(QMainWindow):
         # ---- 필터 탭 줄 ----------------------------------------------------
         tab_row = QFrame()
         tab_row.setObjectName("TabRow")
-        tab_row.setStyleSheet("QFrame#TabRow { border: none; border-bottom: 1px solid #e3e6ea; }")
+        tab_row.setStyleSheet(f"QFrame#TabRow {{ border: none; border-bottom: 1px solid {BORDER}; }}")
         tl = QHBoxLayout(tab_row)
         tl.setContentsMargins(2, 0, 0, 0)
         tl.setSpacing(0)
@@ -354,7 +365,7 @@ class MainWindow(QMainWindow):
         self.q_status.setObjectName("Muted")
         tl.addWidget(self.q_status)
         tl.addSpacing(6)
-        self.b_list_menu = icon_button("kebab", "목록 관리", color="#5f6670", size=18, box=30)
+        self.b_list_menu = icon_button("kebab", "목록 관리", size=18, box=30)
         self.b_list_menu.clicked.connect(self._list_menu)
         tl.addWidget(self.b_list_menu)
         bd.addWidget(tab_row)
@@ -374,7 +385,7 @@ class MainWindow(QMainWindow):
         el.setContentsMargins(0, 56, 0, 0)
         el.setSpacing(6)
         empty_icon = QLabel()
-        empty_icon.setPixmap(icons.pixmap("download", "#c9ced4", 56))
+        empty_icon.setPixmap(icons.pixmap("download", "#454a55", 56))
         empty_icon.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.q_empty_title = QLabel("링크를 붙여넣어 시작하세요")
         self.q_empty_title.setObjectName("EmptyTitle")
@@ -597,13 +608,13 @@ class MainWindow(QMainWindow):
         if missing:
             self.deps_btn.setText("⚠ 필요한 도구 없음: " + ", ".join(missing))
             self.deps_btn.setStyleSheet(f"color: {WARNING};")
-            self.b_tools.setIcon(icons.icon("info", "#e08a1e", 22))
+            self.b_tools.setIcon(icons.icon("info", WARNING, 22))
             self.b_tools.setToolTip("도구 상태 · 필요한 도구가 없어요: " + ", ".join(missing))
         else:
             js = deps.js.name if deps.js else ""
             self.deps_btn.setText(f"yt-dlp {deps.ytdlp.version} · ffmpeg ✔ · {js} ✔")
             self.deps_btn.setStyleSheet("")
-            self.b_tools.setIcon(icons.icon("info", "#5f6670", 22))
+            self.b_tools.setIcon(icons.icon("info", ICON, 22))
             self.b_tools.setToolTip(f"도구 상태 · yt-dlp {deps.ytdlp.version} · ffmpeg ✔ · {js} ✔")
         if self.status_msg.text() == "도구 확인 중…":
             self.status_msg.setText("준비됐어요")
@@ -705,6 +716,18 @@ class MainWindow(QMainWindow):
         self.url_edit.clear()
         self._set_info(None)
         self._update_panel_state()
+
+    def _set_meta(self, bits: list) -> None:
+        """제목 아래의 알약 모양 정보 (채널 · 최대 화질 …)."""
+        while self.meta_row.count():
+            item = self.meta_row.takeAt(0)
+            if item.widget() is not None:
+                item.widget().deleteLater()
+        for text, accent in bits:
+            lbl = QLabel(text)
+            lbl.setObjectName("PillAccent" if accent else "Pill")
+            self.meta_row.addWidget(lbl)
+        self.meta_row.addStretch(1)
 
     def _update_panel_state(self) -> None:
         has_info = self.info is not None
@@ -817,7 +840,7 @@ class MainWindow(QMainWindow):
         self._update_subs_button()
         if info is None:
             self.v_title.setText("")
-            self.v_meta.setText("")
+            self._set_meta([])
             if error:
                 self.v_notice.setText(error)
                 self.v_notice.setObjectName("Error")
@@ -838,7 +861,7 @@ class MainWindow(QMainWindow):
             bits = ["재생목록", f"영상 {len(info.entries)}개"]
             if info.uploader:
                 bits.insert(1, info.uploader)
-            self.v_meta.setText(" · ".join(bits))
+            self._set_meta([(b, False) for b in bits])
             if info.nested_tabs:
                 self.v_notice.setText("채널 주소예요. 채널의 '동영상' 탭 주소(…/videos)나 재생목록 주소를 넣어 주세요.")
                 self.v_notice.setVisible(True)
@@ -847,10 +870,12 @@ class MainWindow(QMainWindow):
                 self.v_notice.setVisible(True)
             self.b_download.setText(f"재생목록에서 선택… ({n_ok})")
         else:
-            bits = [b for b in (info.uploader, human_duration(info.duration)) if b]
+            bits = [(info.uploader, False)] if info.uploader else []
             if info.heights:
-                bits.append(f"최대 {height_label(info.heights[0])}")
-            self.v_meta.setText(" · ".join(bits))
+                bits.append((f"최대 {height_label(info.heights[0])}", True))
+            if info.subtitles:
+                bits.append((f"자막 {len(info.subtitles)}개", False))
+            self._set_meta(bits)
             if info.is_live:
                 self.v_notice.setText("라이브 방송이나 예정된 최초 공개는 받을 수 없어요. 방송이 끝난 뒤 다시 시도해 주세요.")
                 self.v_notice.setVisible(True)
@@ -866,7 +891,8 @@ class MainWindow(QMainWindow):
             def set_thumb(pm, want=want):
                 if self.info is not None and self.info.thumbnail == want:
                     self.thumb.setText("")
-                    self.thumb.setPixmap(rounded(pm, THUMB_SIZE, 10))
+                    badge = human_duration(info.duration) if info.kind == "video" and info.duration else None
+                    self.thumb.setPixmap(rounded(pm, THUMB_SIZE, 10, badge=badge))
 
             self.thumbs.load(info.thumbnail, set_thumb)
         self._update_panel_state()
@@ -1152,6 +1178,7 @@ class MainWindow(QMainWindow):
     def _update_tags_button(self) -> None:
         text = self.tag_state.button_text()
         self.b_tags.setText(text if len(text) <= 34 else text[:33] + "…")
+        self._set_pill_active(self.b_tags, self.tag_state.on)
         if self.tag_state.on and self.tag_state.values:
             v = self.tag_state.values
             self.b_tags.setToolTip("\n".join(f"{k}: {v.get(f, '')}" for f, k in
@@ -1166,7 +1193,15 @@ class MainWindow(QMainWindow):
         info = self.info
         if info is not None and info.kind == "video" and not info.subtitles and not info.auto_captions:
             self.b_subs.setText("자막: 이 영상엔 없음")
+        self._set_pill_active(self.b_subs, bool(self.sub_langs))
         self._update_collapsed_summary()
+
+    @staticmethod
+    def _set_pill_active(btn: QPushButton, on: bool) -> None:
+        """알약 버튼이 '켜진' 상태(빨간 테두리)인지 표시."""
+        if bool(btn.property("active")) != on:
+            btn.setProperty("active", on)
+            repolish(btn)
 
     def _set_collapsed(self, collapsed: bool, save: bool = True) -> None:
         self.settings.options_collapsed = collapsed

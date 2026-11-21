@@ -6,13 +6,13 @@ from typing import Callable, Optional
 from PySide6.QtCore import QEvent, QObject, QRectF, QSize, Qt, QUrl, QVariantAnimation, Signal
 from PySide6.QtGui import QColor, QFontMetrics, QPainter, QPainterPath, QPixmap
 from PySide6.QtNetwork import QNetworkAccessManager, QNetworkReply, QNetworkRequest
-from PySide6.QtWidgets import (QAbstractButton, QButtonGroup, QComboBox, QDialog, QDialogButtonBox,
+from PySide6.QtWidgets import (QAbstractButton, QButtonGroup, QCheckBox, QComboBox, QDialog, QDialogButtonBox,
                                QHBoxLayout, QLabel, QPlainTextEdit, QPushButton, QSizePolicy,
                                QVBoxLayout, QWidget)
 
 from .. import APP_NAME, APP_VERSION
 from . import icons
-from .theme import GREEN, MUTED, SURFACE2, TEXT
+from .theme import ACCENT, DISABLED, ICON, MUTED, SURFACE2, TEXT
 
 
 class ElidedLabel(QLabel):
@@ -44,8 +44,8 @@ class ElidedLabel(QLabel):
         super().setText(self.fontMetrics().elidedText(self._full, self._mode, width))
 
 
-def rounded(pm: QPixmap, size: QSize, radius: int = 8) -> QPixmap:
-    """썸네일을 꽉 채워 자르고 모서리를 둥글게."""
+def rounded(pm: QPixmap, size: QSize, radius: int = 8, badge: Optional[str] = None) -> QPixmap:
+    """썸네일을 꽉 채워 자르고 모서리를 둥글게. badge 를 주면 오른쪽 아래에 (영상 길이 같은) 작은 표시를 얹는다."""
     dpr = 2.0
     target = QPixmap(int(size.width() * dpr), int(size.height() * dpr))
     target.setDevicePixelRatio(dpr)
@@ -61,6 +61,18 @@ def rounded(pm: QPixmap, size: QSize, radius: int = 8) -> QPixmap:
     x = (size.width() - scaled.width() / dpr) / 2
     y = (size.height() - scaled.height() / dpr) / 2
     p.drawPixmap(int(x), int(y), scaled)
+    if badge:
+        f = p.font()
+        f.setPointSizeF(9.0)
+        f.setBold(True)
+        p.setFont(f)
+        fm = QFontMetrics(f)
+        w, h = fm.horizontalAdvance(badge) + 12, fm.height() + 4
+        p.setPen(Qt.PenStyle.NoPen)
+        p.setBrush(QColor(0, 0, 0, 190))
+        p.drawRoundedRect(QRectF(size.width() - w - 8, size.height() - h - 8, w, h), 6, 6)
+        p.setPen(QColor("white"))
+        p.drawText(QRectF(size.width() - w - 8, size.height() - h - 8, w, h), Qt.AlignmentFlag.AlignCenter, badge)
     p.end()
     return target
 
@@ -163,11 +175,11 @@ def _paint_chip(w: QWidget, text: str, hover: bool, bold_font) -> None:
         p.setBrush(QColor(SURFACE2))
         p.drawRoundedRect(QRectF(r).adjusted(0.5, 2.5, -0.5, -2.5), 6, 6)
     p.setFont(bold_font)
-    p.setPen(QColor(TEXT if w.isEnabled() else "#a4abb3"))
+    p.setPen(QColor(TEXT if w.isEnabled() else DISABLED))
     fm = QFontMetrics(bold_font)
     text = fm.elidedText(text, Qt.TextElideMode.ElideRight, r.width() - 8 - 2 - 16 - 6)
     p.drawText(r.adjusted(8, 0, 0, 0), Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
-    pm = icons.pixmap("chevron_down", MUTED if w.isEnabled() else "#b6bcc3", 16)
+    pm = icons.pixmap("chevron_down", MUTED if w.isEnabled() else DISABLED, 16)
     p.drawPixmap(8 + fm.horizontalAdvance(text) + 2, (r.height() - 16) // 2, pm)
 
 
@@ -347,7 +359,7 @@ class ToggleSwitch(QAbstractButton):
     def paintEvent(self, _event) -> None:  # noqa: N802
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
-        off, on = QColor("#c3c9d0"), QColor(GREEN)
+        off, on = QColor("#4a4f5a"), QColor(ACCENT)
         t = self._pos
         track = QColor(int(off.red() + (on.red() - off.red()) * t),
                        int(off.green() + (on.green() - off.green()) * t),
@@ -365,7 +377,7 @@ class ToggleSwitch(QAbstractButton):
         p.drawEllipse(QRectF(x, 4, d, d))
 
 
-def icon_button(name: str, tooltip: str = "", *, color: str = "#5f6670", size: int = 20,
+def icon_button(name: str, tooltip: str = "", *, color: str = ICON, size: int = 20,
                 box: int = 32) -> QPushButton:
     """아이콘만 있는 납작한 버튼."""
     b = QPushButton()
@@ -377,6 +389,15 @@ def icon_button(name: str, tooltip: str = "", *, color: str = "#5f6670", size: i
     if tooltip:
         b.setToolTip(tooltip)
     return b
+
+
+def pill_check(text: str) -> "QCheckBox":
+    """알약 모양 켜기/끄기 버튼 (켜면 빨간 테두리 + ✓)."""
+    cb = QCheckBox(text)
+    cb.setProperty("pill", True)
+    cb.setCursor(Qt.CursorShape.PointingHandCursor)
+    cb.toggled.connect(lambda on, t=text: cb.setText(("✓  " if on else "") + t))
+    return cb
 
 
 def make_button(text: str, *, primary: bool = False, ghost: bool = False, link: bool = False,
