@@ -20,7 +20,7 @@ from ..i18n import tr
 
 REPO_URL = "https://github.com/FORMAT-Hyun/TubeGet"
 
-NOTICE = (tr("TubeGet은 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요."))
+NOTICE = (tr("TubeGet은 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요. MIT 라이선스로 공개돼 있어요."))
 LICENSES = tr("사용한 도구: yt-dlp(Unlicense), FFmpeg(LGPL/GPL), Qt for Python·PySide6(LGPL). 각 도구는 자기 라이선스를 따라요.")
 
 

@@ -83,7 +83,7 @@
     <string name="update_hint">If downloads suddenly stop working, YouTube has often changed. Updating yt-dlp usually fixes it.</string>
     <string name="about">About</string>
     <string name="app_version">TubeGet %s (Beta)</string>
-    <string name="licenses">Uses yt-dlp (Unlicense), FFmpeg (LGPL/GPL), Python (PSF) and youtubedl-android (GPL-3.0). Download only content you have the right to save.</string>
+    <string name="licenses">TubeGet is open source under the MIT License. The APK as a whole follows the GPL-3.0 because it includes youtubedl-android. Uses yt-dlp (Unlicense), FFmpeg (LGPL/GPL), Python (PSF) and youtubedl-android (GPL-3.0). Download only content you have the right to save.</string>
 
     <string name="ch_progress">Download progress</string>
     <string name="ch_done">Finished downloads</string>

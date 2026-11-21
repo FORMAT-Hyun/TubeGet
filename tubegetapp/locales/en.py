@@ -7,8 +7,8 @@ STRINGS: dict[str, str] = {
     "{APP_NAME} 정보": "About {APP_NAME}",
     "yt-dlp 기반 유튜브 다운로더": "YouTube downloader powered by yt-dlp",
     "버전 {version_text}": "Version {version_text}",
-    "TubeGet은 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요.":
-        "TubeGet is a graphical front end for yt-dlp and FFmpeg.",
+    "TubeGet은 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요. MIT 라이선스로 공개돼 있어요.":
+        "TubeGet is a graphical front end for yt-dlp and FFmpeg, released under the MIT License.",
     "사용한 도구: yt-dlp(Unlicense), FFmpeg(LGPL/GPL), Qt for Python·PySide6(LGPL). 각 도구는 자기 라이선스를 따라요.":
         "Tools used: yt-dlp (Unlicense), FFmpeg (LGPL/GPL), Qt for Python / PySide6 (LGPL). Each tool follows its own license.",
     "JS 런타임": "JS runtime",

@@ -26,8 +26,8 @@ android {
         applicationId = "io.github.formathyun.tubeget"
         minSdk = 24
         targetSdk = 35
-        versionCode = 106
-        versionName = "0.1.6"
+        versionCode = 107
+        versionName = "0.1.7"
     }
 
     signingConfigs {

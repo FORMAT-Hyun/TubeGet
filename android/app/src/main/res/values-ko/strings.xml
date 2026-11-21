@@ -81,7 +81,7 @@
     <string name="update_hint">갑자기 안 받아지면 유튜브가 바뀐 경우가 많아요. yt-dlp를 업데이트하면 대부분 해결돼요.</string>
     <string name="about">앱 정보</string>
     <string name="app_version">TubeGet %s (베타)</string>
-    <string name="licenses">yt-dlp (Unlicense), FFmpeg (LGPL/GPL), Python (PSF), youtubedl-android (GPL-3.0)를 사용해요. 저장할 권리가 있는 콘텐츠만 받아 주세요.</string>
+    <string name="licenses">TubeGet은 MIT 라이선스 오픈 소스예요. APK 전체는 youtubedl-android를 포함해서 GPL-3.0을 따라요. yt-dlp (Unlicense), FFmpeg (LGPL/GPL), Python (PSF), youtubedl-android (GPL-3.0)를 사용해요. 저장할 권리가 있는 콘텐츠만 받아 주세요.</string>
 
     <string name="ch_progress">다운로드 진행</string>
     <string name="ch_done">다운로드 완료</string>

@@ -1,10 +1,10 @@
 """어두운 테마(빨강 포인트), 앱 아이콘."""
 from __future__ import annotations
 
-from PySide6.QtCore import QPointF, QRectF, Qt
+from PySide6.QtCore import QEvent, QObject, QPointF, QRectF, Qt
 from PySide6.QtGui import (QBrush, QColor, QIcon, QLinearGradient, QPainter, QPainterPath,
                            QPalette, QPen, QPixmap)
-from PySide6.QtWidgets import QApplication, QWidget
+from PySide6.QtWidgets import QApplication, QComboBox, QStyledItemDelegate, QWidget
 
 from ..paths import resource_path
 
@@ -97,14 +97,19 @@ QLineEdit:focus, QComboBox:focus, QSpinBox:focus {{ border-color: {ACCENT}; }}
 QLineEdit:disabled, QComboBox:disabled, QSpinBox:disabled {{ color: {DISABLED}; background: {SURFACE}; }}
 QComboBox::drop-down {{ border: none; width: 26px; }}
 QComboBox::down-arrow {{ image: url("{chevron}"); width: 12px; height: 12px; }}
+QComboBox {{ combobox-popup: 0; }}
+/* 펼친 목록: 메뉴와 같은 둥근 카드 하나로 (바깥 사각 틀은 투명하게) */
+QComboBoxPrivateContainer {{ background: transparent; border: none; margin: 0; padding: 0; }}
 QComboBox QAbstractItemView {{
-    background: {SURFACE2}; border: 1px solid {BORDER_STRONG}; outline: none; padding: 4px;
+    background: {SURFACE2}; border: 1px solid {BORDER_STRONG}; border-radius: 10px;
+    padding: 6px; outline: none; margin: 0;
     selection-background-color: {ACCENT_SOFT}; selection-color: {TEXT};
 }}
-QComboBox QAbstractItemView::item {{ padding: 6px 10px; min-height: 22px; border-radius: 4px; }}
-QComboBox QAbstractItemView::item:selected, QComboBox QAbstractItemView::item:hover {{
-    background: {ACCENT_SOFT}; color: {TEXT};
+QComboBox QAbstractItemView::item {{
+    padding: 7px 14px; min-height: 20px; border: none; border-radius: 6px; margin: 1px 0;
 }}
+QComboBox QAbstractItemView::item:hover {{ background: #30343d; color: {TEXT}; }}
+QComboBox QAbstractItemView::item:selected {{ background: {ACCENT_SOFT}; color: {ACCENT_TEXT}; }}
 QSpinBox::up-button, QSpinBox::down-button {{ width: 18px; border: none; }}
 
 /* ---------- 버튼 ---------- */
@@ -250,7 +255,39 @@ QMessageBox QLabel#qt_msgbox_label {{ min-width: 320px; }}   /* 아이콘 칸까
 """
 
 
+def round_combo_popup(combo: QComboBox) -> None:
+    """드롭다운 목록을 둥근 카드 하나로 보이게 한다.
+
+    기본 목록은 사각 틀(창) 안에 사각 목록이 또 있어서 사각형 두 개가 겹쳐 보인다.
+    바깥 창은 테두리·그림자 없이 투명하게 하고, 안쪽 목록만 둥글게 그린다.
+    """
+    if combo.property("_roundPopup"):
+        return
+    combo.setProperty("_roundPopup", True)
+    combo.setItemDelegate(QStyledItemDelegate(combo))   # 메뉴식 체크 표시 대신 스타일시트대로
+    popup = combo.view().window()
+    popup.setWindowFlags(popup.windowFlags() | Qt.WindowType.FramelessWindowHint
+                         | Qt.WindowType.NoDropShadowWindowHint)
+    popup.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+
+
+class _ComboPopupStyler(QObject):
+    """앱의 모든 드롭다운에 round_combo_popup 을 적용한다."""
+
+    def eventFilter(self, obj, event) -> bool:  # noqa: N802
+        if event.type() == QEvent.Type.Polish and isinstance(obj, QComboBox):
+            round_combo_popup(obj)
+        return False
+
+
+_styler: _ComboPopupStyler | None = None
+
+
 def apply_theme(app: QApplication) -> None:
+    global _styler
+    if _styler is None:
+        _styler = _ComboPopupStyler(app)
+        app.installEventFilter(_styler)
     app.setStyle("Fusion")
     pal = QPalette()
     pal.setColor(QPalette.ColorRole.Window, QColor(BG))
