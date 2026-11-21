@@ -140,6 +140,6 @@ Text without a translation falls back to the Korean source. During development y
 
 TubeGet's code is released under the [MIT License](LICENSE). You are free to use, modify and share it.
 
-- Bundled or used tools (yt-dlp, FFmpeg, PySide6, youtubedl-android, etc.) keep their own licenses; see the bottom of [LICENSE](LICENSE).
+- Bundled or used tools (yt-dlp, FFmpeg, PySide6, youtubedl-android, etc.) keep their own licenses; see [NOTICE.md](NOTICE.md).
 - The Android APK includes youtubedl-android (GPL-3.0), so the distributed APK as a whole is subject to the GPL-3.0.
 - Only download content you have the right to save. You are responsible for how you use TubeGet.
