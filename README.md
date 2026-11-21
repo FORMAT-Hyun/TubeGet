@@ -31,35 +31,43 @@ The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); TubeGet i
 - **Languages**: English and Korean. Choose under [Settings → Language], or leave it on "Auto" to follow the system language. Takes effect after a restart.
 - **Also**: Dark theme, drag and drop links onto the window, a notification when downloads finish, single-instance app, and an About window (F1) with "Copy info" for bug reports
 
-## Running (Windows)
+## Installing
 
-1. Install [Python 3.10 or later](https://www.python.org/downloads/). In the installer, **check "Add python.exe to PATH"**.
-2. **Double-click `run_windows.bat`**. The first run takes a minute or two to install the required package (PySide6).
-3. The **[Tool status]** window opens on first launch. Click **[Install missing tools]** to download yt-dlp, ffmpeg and Deno automatically (about 200 MB, only once).
+**Download the latest version from [Releases](https://github.com/FORMAT-Hyun/TubeGet/releases/latest).** Nothing else (such as Python) is needed.
 
-On macOS and Linux, run `./run.sh`. On macOS, install ffmpeg separately with `brew install ffmpeg`.
+| File | For | Description |
+|---|---|---|
+| `TubeGet-<version>-Setup-win64.exe` | Windows 10/11 | **Installer (recommended)**. Installs like any program; open it from the Start menu. |
+| `TubeGet-<version>-Portable-win64.zip` | Windows 10/11 | **Portable**. No installation: extract to a new folder and run `TubeGet.exe`. |
+| `TubeGet-<version>-Android-arm64.apk` | Android 7.0+ | **Phone app**. The right choice for almost every phone. |
+| `TubeGet-<version>-Android-armv7.apk` | Android 7.0+ | Only for very old 32-bit phones. |
 
-> When you get a new version, extract it into a new folder instead of over the old one. Settings, history and installed tools live separately in `%APPDATA%\TubeGet`, so they are kept.
+### Windows
 
-### Building an installer (recommended)
+1. Run the installer. Choose "Install for me only" to install without admin rights.
+   - The files are not code-signed, so SmartScreen may warn you. Click **More info → Run anyway**.
+2. The **[Tool status]** window opens on first launch. Click **[Install missing tools]** to download yt-dlp, ffmpeg and Deno automatically (about 200 MB, only once).
 
-**Double-click `build_installer.bat`** to create `dist\TubeGet-Setup-<version>.exe`.
-The first run takes a few minutes to set up PyInstaller and Inno Setup (installed automatically with winget).
-
-- The default install location is `C:\Program Files\TubeGet`. Choose "Install for me only" to install to `%LOCALAPPDATA%\Programs\TubeGet` without admin rights.
-- A Start menu shortcut is always created. A desktop shortcut and starting with Windows are optional.
+- To update, just run the new installer. Settings, history and installed tools live in `%APPDATA%\TubeGet`, so they are kept.
 - Uninstall from [Settings → Apps → Installed apps]. The uninstaller asks whether to remove settings and tools too.
 
-The installer works on PCs without Python.
+### Android (phone)
 
-### Building just the exe
+A phone-friendly app that downloads on the phone itself; no PC needed.
 
-Run `build_windows.bat` to create a portable `dist\TubeGet\TubeGet.exe` (the whole `dist\TubeGet` folder is needed).
+1. Download the APK on your phone, open it, and allow "Install unknown apps" for your browser or file manager when asked.
+2. In the YouTube app, tap **Share → TubeGet**, or copy a link and tap **[Paste link]**.
+3. On the video card, pick video/audio, quality (bitrate for audio), format, save location, subtitles/dubbing and tags, then tap **[Download]**. With **Instant download** on, it starts right away.
+
+- Files are saved to `Download/TubeGet` and show up in your gallery and music apps.
+- yt-dlp, Python and FFmpeg are included in the app. yt-dlp updates itself once a day.
+- Downloads keep going with the screen off; progress is shown in a notification.
+- To update, install the new APK over the old one (no need to uninstall).
 
 ## Usage
 
 1. Copy a YouTube link and click the red **[Paste link]** button at the top. Press Ctrl+L to type a link, or drag one onto the window.
-2. In the toolbar, choose the download type (video/audio), quality, format, save location, subtitles/dubbing and tags.
+2. In the toolbar, choose the download type (video/audio), quality (bitrate for audio), format, save location, subtitles/dubbing and tags.
 3. A video card (thumbnail, info, estimated size) appears at the top of the list. Click **[Download]** on the card. You can load several links and set options per card.
 
 With [Instant] on, steps 2 and 3 are skipped.
@@ -89,6 +97,7 @@ With [Instant] on, steps 2 and 3 are skipped.
 main.py                    Entry point
 installer/TubeGet.iss      Installer script (Inno Setup)
 build_installer.bat        Builds the exe and the installer in one go
+android/                   Android app (Kotlin + Jetpack Compose) - on the `mobile` branch
 tubegetapp/
   config.py                Settings (JSON)
   i18n.py                  Translation: tr("Korean source") → current language
@@ -126,3 +135,11 @@ UI text is wrapped in `tr("Korean text")`, using the Korean source as the key (`
 3. Run `python -m pytest tests/test_i18n.py` to check for missing translations and placeholder errors.
 
 Text without a translation falls back to the Korean source. During development you can force a language with the environment variable `TUBEGET_LANG=en`.
+
+## License
+
+TubeGet's code is released under the [MIT License](LICENSE). You are free to use, modify and share it.
+
+- Bundled or used tools (yt-dlp, FFmpeg, PySide6, youtubedl-android, etc.) keep their own licenses; see the bottom of [LICENSE](LICENSE).
+- The Android APK includes youtubedl-android (GPL-3.0), so the distributed APK as a whole is subject to the GPL-3.0.
+- Only download content you have the right to save. You are responsible for how you use TubeGet.
