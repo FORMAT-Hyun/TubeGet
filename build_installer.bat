@@ -3,7 +3,7 @@ chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
 echo ================================================
-echo   TubeGet 설치 파일 만들기
+echo   Acortube 설치 파일 만들기
 echo ================================================
 echo.
 if exist "tubegetapp\__init__.py" goto have_src
@@ -31,9 +31,9 @@ if errorlevel 1 goto fail
 
 rem ---- 2. exe 빌드 ----
 echo [3/4] 프로그램 빌드 중... (몇 분 걸려요)
-if exist "dist\TubeGet" rmdir /s /q "dist\TubeGet"
-"%PY%" -m PyInstaller --noconfirm --clean --windowed --name TubeGet --icon assets\icon.ico --add-data "assets;assets" --paths "%CD%" --collect-submodules tubegetapp main.py
-if not exist "dist\TubeGet\TubeGet.exe" goto fail
+if exist "dist\Acortube" rmdir /s /q "dist\Acortube"
+"%PY%" -m PyInstaller --noconfirm --clean --windowed --name Acortube --icon assets\icon.ico --add-data "assets;assets" --paths "%CD%" --collect-submodules tubegetapp main.py
+if not exist "dist\Acortube\Acortube.exe" goto fail
 
 rem ---- 3. Inno Setup 찾기 (없으면 winget 으로 설치) ----
 call :find_iscc
@@ -55,13 +55,13 @@ if not defined VER (
     goto fail
 )
 echo [4/4] 설치 파일 만드는 중... ^(버전 %VER%^)
-"%ISCC%" /Q "/DMyAppVersion=%VER%" "installer\TubeGet.iss"
+"%ISCC%" /Q "/DMyAppVersion=%VER%" "installer\Acortube.iss"
 if errorlevel 1 goto fail
-if not exist "dist\TubeGet-Setup-%VER%.exe" goto fail
+if not exist "dist\Acortube-Setup-%VER%.exe" goto fail
 
 echo.
-echo 완료! dist\TubeGet-Setup-%VER%.exe 를 실행하면 설치 마법사가 열려요.
-explorer /select,"%CD%\dist\TubeGet-Setup-%VER%.exe"
+echo 완료! dist\Acortube-Setup-%VER%.exe 를 실행하면 설치 마법사가 열려요.
+explorer /select,"%CD%\dist\Acortube-Setup-%VER%.exe"
 pause
 exit /b 0
 

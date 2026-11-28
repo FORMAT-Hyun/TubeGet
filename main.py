@@ -1,4 +1,4 @@
-"""TubeGet 실행 진입점."""
+"""Acortube 실행 진입점."""
 import os
 import sys
 
@@ -20,7 +20,7 @@ except ModuleNotFoundError as exc:  # 압축이 덜 풀렸거나 폴더가 섞�
         raise
     _app = QApplication(sys.argv)
     QMessageBox.critical(
-        None, "TubeGet",
+        None, "Acortube",
         "프로그램 파일(tubegetapp 폴더)을 찾을 수 없어요.\n\n"
         "압축 파일을 마우스 오른쪽 → '모두 압축 풀기'로 새 폴더에 전부 푼 다음,\n"
         "그 폴더 안의 run_windows.bat 으로 실행해 주세요.\n"
@@ -47,7 +47,7 @@ def main() -> int:
     if sys.platform == "win32":
         try:  # 작업 표시줄에 파이썬 아이콘 대신 앱 아이콘 표시
             import ctypes
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("TubeGet.App")
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Acortube.App")
         except Exception:  # noqa: BLE001
             pass
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)

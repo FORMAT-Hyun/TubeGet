@@ -10,7 +10,7 @@ if not exist "tubegetapp\__init__.py" (
 )
 
 if not exist ".venv\Scripts\python.exe" (
-    echo [TubeGet] 처음 실행: 파이썬 가상환경을 만드는 중...
+    echo [Acortube] 처음 실행: 파이썬 가상환경을 만드는 중...
     py -3 -m venv .venv 2>nul || python -m venv .venv
     if not exist ".venv\Scripts\python.exe" (
         echo.
@@ -19,7 +19,7 @@ if not exist ".venv\Scripts\python.exe" (
         pause
         exit /b 1
     )
-    echo [TubeGet] 필요한 패키지 설치 중... ^(처음 한 번, 1~2분^)
+    echo [Acortube] 필요한 패키지 설치 중... ^(처음 한 번, 1~2분^)
     ".venv\Scripts\python.exe" -m pip install --upgrade pip >nul
     ".venv\Scripts\python.exe" -m pip install -r requirements.txt
 )

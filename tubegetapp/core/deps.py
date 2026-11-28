@@ -38,7 +38,7 @@ class Tool:
     name: str
     path: Optional[str] = None
     version: Optional[str] = None
-    managed: bool = False  # TubeGet bin 폴더에 설치된 것인지
+    managed: bool = False  # Acortube bin 폴더에 설치된 것인지
 
     @property
     def ok(self) -> bool:

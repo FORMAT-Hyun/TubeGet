@@ -316,6 +316,13 @@ def repolish(w: QWidget) -> None:
 
 
 def make_icon_pixmap(size: int = 256) -> QPixmap:
+    """앱 아이콘 (도토리 + 다운로드 화살표). assets/icon.png 가 없을 때만 예전 모양을 직접 그린다."""
+    png = resource_path("assets", "icon.png")
+    if png.exists():
+        img = QPixmap(str(png))
+        if not img.isNull():
+            return img.scaled(size, size, Qt.AspectRatioMode.KeepAspectRatio,
+                              Qt.TransformationMode.SmoothTransformation)
     pm = QPixmap(size, size)
     pm.fill(Qt.GlobalColor.transparent)
     p = QPainter(pm)

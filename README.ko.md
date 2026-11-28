@@ -1,11 +1,11 @@
-# TubeGet
+# Acortube
 
 [English](README.md) | **한국어**
 
 **yt-dlp 기반 유튜브 다운로더 (GUI)**
 
 주소를 붙여넣고 화질과 형식을 고르면 받아주는 데스크톱 프로그램이에요.
-다운로드는 [yt-dlp](https://github.com/yt-dlp/yt-dlp)가 하고, TubeGet은 그걸 편하게 쓰게 해 주는 화면이에요.
+다운로드는 [yt-dlp](https://github.com/yt-dlp/yt-dlp)가 하고, Acortube는 그걸 편하게 쓰게 해 주는 화면이에요.
 
 ## 주요 기능
 
@@ -33,12 +33,12 @@
 
 ## 설치하기
 
-**[Releases](https://github.com/FORMAT-Hyun/TubeGet/releases/latest)에서 최신 버전을 받으세요.** 파이썬 같은 다른 프로그램은 필요 없어요.
+**[Releases](https://github.com/FORMAT-Hyun/Acortube/releases/latest)에서 최신 버전을 받으세요.** 파이썬 같은 다른 프로그램은 필요 없어요.
 
 | 파일 | 어디에 | 설명 |
 |---|---|---|
-| `TubeGet-<버전>-Setup-win64.exe` | Windows 10/11 | **설치 버전 (추천)**. 일반 프로그램처럼 설치하고 시작 메뉴에서 켜요. |
-| `TubeGet-<버전>-Portable-win64.zip` | Windows 10/11 | **포터블**. 설치 없이 새 폴더에 압축을 풀고 `TubeGet.exe`를 실행해요. |
+| `Acortube-<버전>-Setup-win64.exe` | Windows 10/11 | **설치 버전 (추천)**. 일반 프로그램처럼 설치하고 시작 메뉴에서 켜요. |
+| `Acortube-<버전>-Portable-win64.zip` | Windows 10/11 | **포터블**. 설치 없이 새 폴더에 압축을 풀고 `Acortube.exe`를 실행해요. |
 
 ### Windows
 
@@ -46,12 +46,12 @@
    - 코드 서명이 없어서 SmartScreen 경고가 뜰 수 있어요. **추가 정보 → 실행**을 누르세요.
 2. 처음 켜면 **[도구 상태]** 창이 떠요. **[없는 도구 설치]**를 누르면 yt-dlp, ffmpeg, Deno를 자동으로 받아요 (약 200MB, 한 번만).
 
-- 새 버전은 그냥 새 설치 파일을 실행하면 돼요. 설정, 기록, 설치된 도구는 `%APPDATA%\TubeGet`에 있어서 그대로 남아요.
+- 새 버전은 그냥 새 설치 파일을 실행하면 돼요. 설정, 기록, 설치된 도구는 `%APPDATA%\Acortube`에 있어서 그대로 남아요.
 - 제거는 [설정 → 앱 → 설치된 앱]에서 해요. 제거할 때 설정과 도구 폴더도 지울지 물어봐요.
 
 ### 안드로이드 (휴대폰)
 
-휴대폰 앱은 **[TubeGet Mobile](https://github.com/FORMAT-Hyun/TubeGet-Mobile)** 저장소로 분리됐어요. APK는 [그쪽 Releases](https://github.com/FORMAT-Hyun/TubeGet-Mobile/releases/latest)에서 받으세요.
+휴대폰 앱은 **[Acortube Mobile](https://github.com/FORMAT-Hyun/Acortube-Mobile)** 저장소로 분리됐어요. APK는 [그쪽 Releases](https://github.com/FORMAT-Hyun/Acortube-Mobile/releases/latest)에서 받으세요.
 
 ## 사용법
 
@@ -77,14 +77,14 @@
 
 | 무엇 | Windows | macOS | Linux |
 |---|---|---|---|
-| 설정, 기록, 설치된 도구(`bin`) | `%APPDATA%\TubeGet` | `~/Library/Application Support/TubeGet` | `~/.config/tubeget` |
-| 기본 저장 위치 | `다운로드\TubeGet` | 같음 | 같음 |
+| 설정, 기록, 설치된 도구(`bin`) | `%APPDATA%\Acortube` | `~/Library/Application Support/Acortube` | `~/.config/tubeget` |
+| 기본 저장 위치 | `다운로드\Acortube` | 같음 | 같음 |
 
 ## 구조
 
 ```
 main.py                    진입점
-installer/TubeGet.iss      설치 마법사 스크립트 (Inno Setup)
+installer/Acortube.iss      설치 마법사 스크립트 (Inno Setup)
 build_installer.bat        exe 빌드부터 설치 파일 생성까지 한 번에
 tubegetapp/
   config.py                설정 (JSON)
@@ -126,7 +126,7 @@ yt-dlp를 라이브러리로 넣지 않고 **별도 실행 파일로 호출**해
 
 ## 라이선스
 
-TubeGet 코드는 [MIT 라이선스](LICENSE)예요. 자유롭게 쓰고 고치고 나눌 수 있어요.
+Acortube 코드는 [MIT 라이선스](LICENSE)예요. 자유롭게 쓰고 고치고 나눌 수 있어요.
 
 - 함께 쓰는 도구(yt-dlp, FFmpeg, PySide6 등)는 각자의 라이선스를 따라요. 자세한 내용은 [NOTICE.md](NOTICE.md)에 있어요.
 - 저작권이 있는 콘텐츠는 저장할 권리가 있을 때만 받아 주세요. 사용에 대한 책임은 사용자에게 있어요.

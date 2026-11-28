@@ -1,11 +1,11 @@
-# TubeGet
+# Acortube
 
 **English** | [한국어](README.ko.md)
 
 **A desktop YouTube downloader (GUI) powered by yt-dlp**
 
-Paste a link, pick the quality and format, and TubeGet downloads it.
-The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); TubeGet is the friendly window on top of it.
+Paste a link, pick the quality and format, and Acortube downloads it.
+The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); Acortube is the friendly window on top of it.
 
 ## Features
 
@@ -33,12 +33,12 @@ The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); TubeGet i
 
 ## Installing
 
-**Download the latest version from [Releases](https://github.com/FORMAT-Hyun/TubeGet/releases/latest).** Nothing else (such as Python) is needed.
+**Download the latest version from [Releases](https://github.com/FORMAT-Hyun/Acortube/releases/latest).** Nothing else (such as Python) is needed.
 
 | File | For | Description |
 |---|---|---|
-| `TubeGet-<version>-Setup-win64.exe` | Windows 10/11 | **Installer (recommended)**. Installs like any program; open it from the Start menu. |
-| `TubeGet-<version>-Portable-win64.zip` | Windows 10/11 | **Portable**. No installation: extract to a new folder and run `TubeGet.exe`. |
+| `Acortube-<version>-Setup-win64.exe` | Windows 10/11 | **Installer (recommended)**. Installs like any program; open it from the Start menu. |
+| `Acortube-<version>-Portable-win64.zip` | Windows 10/11 | **Portable**. No installation: extract to a new folder and run `Acortube.exe`. |
 
 ### Windows
 
@@ -46,12 +46,12 @@ The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); TubeGet i
    - The files are not code-signed, so SmartScreen may warn you. Click **More info → Run anyway**.
 2. The **[Tool status]** window opens on first launch. Click **[Install missing tools]** to download yt-dlp, ffmpeg and Deno automatically (about 200 MB, only once).
 
-- To update, just run the new installer. Settings, history and installed tools live in `%APPDATA%\TubeGet`, so they are kept.
+- To update, just run the new installer. Settings, history and installed tools live in `%APPDATA%\Acortube`, so they are kept.
 - Uninstall from [Settings → Apps → Installed apps]. The uninstaller asks whether to remove settings and tools too.
 
 ### Android (phone)
 
-The phone app now lives in its own repository, **[TubeGet Mobile](https://github.com/FORMAT-Hyun/TubeGet-Mobile)**. Get the APK from [its Releases](https://github.com/FORMAT-Hyun/TubeGet-Mobile/releases/latest).
+The phone app now lives in its own repository, **[Acortube Mobile](https://github.com/FORMAT-Hyun/Acortube-Mobile)**. Get the APK from [its Releases](https://github.com/FORMAT-Hyun/Acortube-Mobile/releases/latest).
 
 ## Usage
 
@@ -77,14 +77,14 @@ With [Instant] on, steps 2 and 3 are skipped.
 
 | What | Windows | macOS | Linux |
 |---|---|---|---|
-| Settings, history, installed tools (`bin`) | `%APPDATA%\TubeGet` | `~/Library/Application Support/TubeGet` | `~/.config/tubeget` |
-| Default save location | `Downloads\TubeGet` | same | same |
+| Settings, history, installed tools (`bin`) | `%APPDATA%\Acortube` | `~/Library/Application Support/Acortube` | `~/.config/tubeget` |
+| Default save location | `Downloads\Acortube` | same | same |
 
 ## Project structure
 
 ```
 main.py                    Entry point
-installer/TubeGet.iss      Installer script (Inno Setup)
+installer/Acortube.iss      Installer script (Inno Setup)
 build_installer.bat        Builds the exe and the installer in one go
 tubegetapp/
   config.py                Settings (JSON)
@@ -126,7 +126,7 @@ Text without a translation falls back to the Korean source. During development y
 
 ## License
 
-TubeGet's code is released under the [MIT License](LICENSE). You are free to use, modify and share it.
+Acortube's code is released under the [MIT License](LICENSE). You are free to use, modify and share it.
 
-- Tools TubeGet uses (yt-dlp, FFmpeg, PySide6, etc.) keep their own licenses; see [NOTICE.md](NOTICE.md).
-- Only download content you have the right to save. You are responsible for how you use TubeGet.
+- Tools Acortube uses (yt-dlp, FFmpeg, PySide6, etc.) keep their own licenses; see [NOTICE.md](NOTICE.md).
+- Only download content you have the right to save. You are responsible for how you use Acortube.

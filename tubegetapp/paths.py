@@ -15,15 +15,37 @@ def data_dir() -> Path:
     if override:
         p = Path(override)
     elif IS_WINDOWS:
-        base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
-        p = Path(base) / "TubeGet"
+        base = Path(os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming"))
+        p = _migrate(base / "TubeGet", base / "Acortube")
     elif IS_MAC:
-        p = Path.home() / "Library" / "Application Support" / "TubeGet"
+        base = Path.home() / "Library" / "Application Support"
+        p = _migrate(base / "TubeGet", base / "Acortube")
     else:
-        base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
-        p = Path(base) / "tubeget"
+        base = Path(os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config"))
+        p = _migrate(base / "tubeget", base / "acortube")
     p.mkdir(parents=True, exist_ok=True)
     return p
+
+
+_migrated = False
+
+
+def _migrate(old: Path, new: Path) -> Path:
+    """예전 이름(TubeGet)의 폴더가 있으면 새 이름(Acortube)으로 한 번 옮긴다.
+
+    설정·기록·설치된 도구를 그대로 이어 쓰기 위해서. 옮기지 못하면(다른 프로그램이 쓰는 중 등)
+    예전 폴더를 그대로 쓴다.
+    """
+    global _migrated
+    if _migrated or new.exists() or not old.is_dir():
+        _migrated = True
+        return new if new.exists() or not old.is_dir() else old
+    _migrated = True
+    try:
+        old.rename(new)
+        return new
+    except OSError:
+        return old
 
 
 def bin_dir() -> Path:
@@ -49,4 +71,4 @@ def default_download_dir() -> Path:
     downloads = Path.home() / "Downloads"
     if not downloads.exists():
         downloads = Path.home()
-    return downloads / "TubeGet"
+    return downloads / "Acortube"

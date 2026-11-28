@@ -37,7 +37,7 @@ class InstallCanceled(Exception):
 
 
 class DepInstaller(QThread):
-    """GitHub 최신 릴리스에서 도구를 받아 TubeGet 전용 bin 폴더에 설치."""
+    """GitHub 최신 릴리스에서 도구를 받아 Acortube 전용 bin 폴더에 설치."""
     progress = Signal(str, float, float)   # 도구 이름, 받은 바이트, 전체 바이트(0=모름)
     message = Signal(str)
     result = Signal(bool, str)             # 성공 여부, 요약
@@ -165,7 +165,7 @@ def _place(src: Path, dest: Path) -> None:
 
 
 class YtdlpUpdater(QObject):
-    """TubeGet 전용 yt-dlp 를 `yt-dlp -U` 로 업데이트."""
+    """Acortube 전용 yt-dlp 를 `yt-dlp -U` 로 업데이트."""
     output = Signal(str)
     done = Signal(bool, str)   # 성공 여부, 마지막 메시지
 

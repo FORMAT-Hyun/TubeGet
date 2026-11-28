@@ -63,7 +63,7 @@ def test_combo_outside_scroll_area_unchanged():
 def test_about_has_github_link():
     from tubegetapp.ui.about_dialog import REPO_URL, AboutDialog, report_text
     dlg = AboutDialog(None)
-    assert REPO_URL == "https://github.com/FORMAT-Hyun/TubeGet"
+    assert REPO_URL == "https://github.com/FORMAT-Hyun/Acortube"
     assert REPO_URL in dlg.repo_link.text() and dlg.repo_link.openExternalLinks()
     assert REPO_URL in report_text(None)
     dlg.close()

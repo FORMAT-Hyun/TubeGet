@@ -18,9 +18,9 @@ from .theme import make_icon_pixmap
 from .widgets import make_button
 from ..i18n import tr
 
-REPO_URL = "https://github.com/FORMAT-Hyun/TubeGet"
+REPO_URL = "https://github.com/FORMAT-Hyun/Acortube"
 
-NOTICE = (tr("TubeGet은 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요. MIT 라이선스로 공개돼 있어요."))
+NOTICE = (tr("Acortube는 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요. MIT 라이선스로 공개돼 있어요."))
 LICENSES = tr("사용한 도구: yt-dlp(Unlicense), FFmpeg(LGPL/GPL), Qt for Python·PySide6(LGPL). 각 도구는 자기 라이선스를 따라요.")
 
 
@@ -31,7 +31,7 @@ def version_text() -> str:
 def tool_line(tool) -> str:
     if tool is None or not tool.ok:
         return tr("없음")
-    return (tool.version or tr("설치됨")) + (tr(" · TubeGet 폴더") if tool.managed else tr(" · 시스템"))
+    return (tool.version or tr("설치됨")) + (tr(" · Acortube 폴더") if tool.managed else tr(" · 시스템"))
 
 
 def report_text(deps: Optional[Deps]) -> str:

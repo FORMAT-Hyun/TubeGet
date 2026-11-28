@@ -3,7 +3,7 @@
 set -e
 cd "$(dirname "$0")"
 if [ ! -x .venv/bin/python ]; then
-  echo "[TubeGet] 처음 실행: 가상환경과 패키지를 준비하는 중..."
+  echo "[Acortube] 처음 실행: 가상환경과 패키지를 준비하는 중..."
   python3 -m venv .venv
   .venv/bin/python -m pip install --upgrade pip >/dev/null
   .venv/bin/python -m pip install -r requirements.txt

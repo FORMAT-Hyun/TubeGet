@@ -13,11 +13,11 @@ from .paths import data_dir
 def server_name() -> str:
     # 사용자/데이터 폴더마다 다른 이름 (다른 계정끼리는 서로 막지 않음)
     digest = hashlib.md5(str(data_dir()).encode("utf-8")).hexdigest()[:12]
-    return f"TubeGet-{digest}"
+    return f"Acortube-{digest}"
 
 
 def notify_running_instance() -> bool:
-    """이미 실행 중인 TubeGet 이 있으면 창을 띄우라고 알리고 True."""
+    """이미 실행 중인 Acortube가 있으면 창을 띄우라고 알리고 True."""
     sock = QLocalSocket()
     sock.connectToServer(server_name())
     if not sock.waitForConnected(500):

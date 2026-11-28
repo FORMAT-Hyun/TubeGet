@@ -7,8 +7,8 @@ STRINGS: dict[str, str] = {
     "{APP_NAME} 정보": "About {APP_NAME}",
     "yt-dlp 기반 유튜브 다운로더": "YouTube downloader powered by yt-dlp",
     "버전 {version_text}": "Version {version_text}",
-    "TubeGet은 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요. MIT 라이선스로 공개돼 있어요.":
-        "TubeGet is a graphical front end for yt-dlp and FFmpeg, released under the MIT License.",
+    "Acortube는 yt-dlp와 FFmpeg를 이용하는 화면(GUI) 프로그램이에요. MIT 라이선스로 공개돼 있어요.":
+        "Acortube is a graphical front end for yt-dlp and FFmpeg, released under the MIT License.",
     "사용한 도구: yt-dlp(Unlicense), FFmpeg(LGPL/GPL), Qt for Python·PySide6(LGPL). 각 도구는 자기 라이선스를 따라요.":
         "Tools used: yt-dlp (Unlicense), FFmpeg (LGPL/GPL), Qt for Python / PySide6 (LGPL). Each tool follows its own license.",
     "JS 런타임": "JS runtime",
@@ -26,7 +26,7 @@ STRINGS: dict[str, str] = {
     "복사했어요 ✓": "Copied ✓",
     "앱 정보 · {version_text} (F1)": "About · {version_text} (F1)",
     "설치됨": "Installed",
-    " · TubeGet 폴더": " · TubeGet folder",
+    " · Acortube 폴더": " · Acortube folder",
     " · 시스템": " · System",
     "없음": "None",
     "닫기": "Close",
@@ -44,9 +44,9 @@ STRINGS: dict[str, str] = {
     "Deno (유튜브 JS 처리)": "Deno (YouTube JS handling)",
     "macOS 는 터미널에서 'brew install ffmpeg' 로 설치해 주세요.":
         "On macOS, install it from Terminal with 'brew install ffmpeg'.",
-    "TubeGet은 아래 도구들을 사용해요. 없는 도구는 버튼 한 번으로 TubeGet 전용 폴더에 설치할 수 있어요.":
-        "TubeGet uses the tools below. Missing tools can be installed into TubeGet's own folder with one click.",
-    "TubeGet 전용: ": "TubeGet's own: ",
+    "Acortube는 아래 도구들을 사용해요. 없는 도구는 버튼 한 번으로 Acortube 전용 폴더에 설치할 수 있어요.":
+        "Acortube uses the tools below. Missing tools can be installed into Acortube's own folder with one click.",
+    "Acortube 전용: ": "Acortube's own: ",
     "시스템: ": "System: ",
     "✔  {name} {ver} (대신 사용)": "✔  {name} {ver} (used instead)",
     "✖  없음": "✖  Missing",
@@ -63,8 +63,8 @@ STRINGS: dict[str, str] = {
         "\nClick [Install missing tools] to download them automatically (about 200 MB, only once).",
     "없는 도구 설치": "Install missing tools",
     "자동으로 설치할 수 있는 도구가 없어요.": "There are no tools that can be installed automatically.",
-    "시스템에 설치된 yt-dlp를 쓰고 있어요. 항상 최신으로 유지되도록 TubeGet 전용 yt-dlp를 설치할게요.":
-        "You are using the system-installed yt-dlp. TubeGet will install its own yt-dlp so it can always stay up to date.",
+    "시스템에 설치된 yt-dlp를 쓰고 있어요. 항상 최신으로 유지되도록 Acortube 전용 yt-dlp를 설치할게요.":
+        "You are using the system-installed yt-dlp. Acortube will install its own yt-dlp so it can always stay up to date.",
     "{join}이(가) 없어서 일부 형식이 실패하거나 화질이 낮을 수 있어요.\n지금 설치할까요?":
         "Without {join}, some formats may fail or quality may be lower.\nInstall now?",
     "다시 확인": "Check again",

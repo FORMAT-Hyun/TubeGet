@@ -34,7 +34,7 @@ class DepsDialog(QDialog):
             t.setObjectName("Notice")
             t.setWordWrap(True)
             lay.addWidget(t)
-        desc = QLabel(tr("TubeGet은 아래 도구들을 사용해요. 없는 도구는 버튼 한 번으로 TubeGet 전용 폴더에 설치할 수 있어요."))
+        desc = QLabel(tr("Acortube는 아래 도구들을 사용해요. 없는 도구는 버튼 한 번으로 Acortube 전용 폴더에 설치할 수 있어요."))
         desc.setObjectName("Muted")
         desc.setWordWrap(True)
         lay.addWidget(desc)
@@ -108,7 +108,7 @@ class DepsDialog(QDialog):
                     label = tr("✔  {name} {ver} (대신 사용)").format(name=tool.name, ver=ver)
                 status.setText(label)
                 status.setObjectName("Success")
-                where.setText((tr("TubeGet 전용: ") if tool.managed else tr("시스템: ")) + tool.path)
+                where.setText((tr("Acortube 전용: ") if tool.managed else tr("시스템: ")) + tool.path)
             else:
                 status.setText(tr("✖  없음"))
                 status.setObjectName("Error")
@@ -166,7 +166,7 @@ class DepsDialog(QDialog):
         if not tool.ok:
             return
         if not tool.managed:
-            self._append(tr("시스템에 설치된 yt-dlp를 쓰고 있어요. 항상 최신으로 유지되도록 TubeGet 전용 yt-dlp를 설치할게요."))
+            self._append(tr("시스템에 설치된 yt-dlp를 쓰고 있어요. 항상 최신으로 유지되도록 Acortube 전용 yt-dlp를 설치할게요."))
             self.install_missing(["yt-dlp"])
             return
         self._append(tr("yt-dlp 업데이트 확인 중…"))
