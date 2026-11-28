@@ -1,9 +1,9 @@
 ﻿; Acortube 설치 마법사 (Inno Setup 6)
 ; build_installer.bat 이 PyInstaller 빌드 후 자동으로 컴파일합니다.
-; 직접 컴파일: ISCC.exe /DMyAppVersion=0.2.0 installer\Acortube.iss
+; 직접 컴파일: ISCC.exe /DMyAppVersion=0.2.1 installer\Acortube.iss
 
 #ifndef MyAppVersion
-  #define MyAppVersion "0.2.0"
+  #define MyAppVersion "0.2.1"
 #endif
 #define MyAppName "Acortube"
 #define MyAppExe "Acortube.exe"
@@ -71,7 +71,10 @@ Type: files; Name: "{userstartup}\TubeGet.lnk"
 Filename: "{app}\{#MyAppExe}"; Description: "Acortube 바로 실행하기"; Flags: nowait postinstall skipifsilent
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{app}"
+; 폴더를 통째로 지우지 않는다 (같은 폴더에 다른 프로그램 파일이 있을 수 있음).
+; 우리 앱의 _internal 에 남은 찌꺼기만 지우고, 폴더는 비었을 때만 지운다.
+Type: filesandordirs; Name: "{app}\_internal"
+Type: dirifempty; Name: "{app}"
 
 [Code]
 const
@@ -109,6 +112,63 @@ begin
     Result := Prev;
 end;
 
+{ 우리 앱이 설치한 것인지: TubeGet.exe / Acortube.exe, _internal 폴더, 제거 프로그램(unins*) }
+function IsOurEntry(Name: String): Boolean;
+begin
+  Name := Lowercase(Name);
+  Result := (Name = 'tubeget.exe') or (Name = 'acortube.exe') or (Name = '_internal') or
+            (Copy(Name, 1, 5) = 'unins');
+end;
+
+{ 폴더에 우리 파일만 있는지 (같은 이름의 다른 프로그램 'TubeGet' 파일이 섞여 있으면 False) }
+function OnlyOurFiles(Dir: String): Boolean;
+var
+  FindRec: TFindRec;
+begin
+  Result := True;
+  if FindFirst(AddBackslash(Dir) + '*', FindRec) then
+  begin
+    try
+      repeat
+        if (FindRec.Name <> '.') and (FindRec.Name <> '..') and (not IsOurEntry(FindRec.Name)) then
+        begin
+          Log('Not ours, keeping folder: ' + FindRec.Name);
+          Result := False;
+          break;
+        end;
+      until not FindNext(FindRec);
+    finally
+      FindClose(FindRec);
+    end;
+  end;
+end;
+
+{ 예전 폴더에서 우리 파일만 지운다. 다른 프로그램 파일은 그대로 두고, 비었을 때만 폴더를 지운다 }
+procedure RemoveOurFiles(Dir: String);
+var
+  FindRec: TFindRec;
+  Path: String;
+begin
+  if FindFirst(AddBackslash(Dir) + '*', FindRec) then
+  begin
+    try
+      repeat
+        if (FindRec.Name <> '.') and (FindRec.Name <> '..') and IsOurEntry(FindRec.Name) then
+        begin
+          Path := AddBackslash(Dir) + FindRec.Name;
+          if (FindRec.Attributes and FILE_ATTRIBUTE_DIRECTORY) <> 0 then
+            DelTree(Path, True, True, True)
+          else
+            DeleteFile(Path);
+        end;
+      until not FindNext(FindRec);
+    finally
+      FindClose(FindRec);
+    end;
+  end;
+  RemoveDir(Dir);   { 비어 있을 때만 지워진다 }
+end;
+
 procedure CurStepChanged(CurStep: TSetupStep);
 var
   NewDir: String;
@@ -120,8 +180,8 @@ begin
     exit;   { 사용자가 예전 폴더를 그대로 고른 경우 }
   if CurStep = ssInstall then
   begin
-    { 설치 직전: 예전 TubeGet 폴더 이름을 Acortube 로 바꾼다 }
-    if not DirExists(NewDir) then
+    { 설치 직전: 예전 TubeGet 폴더에 우리 파일만 있을 때만 폴더 이름을 Acortube 로 바꾼다 }
+    if (not DirExists(NewDir)) and OnlyOurFiles(OldDir) then
     begin
       if RenameFile(OldDir, NewDir) then
         Log('Renamed ' + OldDir + ' -> ' + NewDir)
@@ -131,9 +191,9 @@ begin
   end
   else if CurStep = ssPostInstall then
   begin
-    { 이름을 바꾸지 못했거나 다른 곳에 설치했으면 남은 예전 폴더를 지운다 (설치 정보는 이미 새 위치를 가리킴) }
+    { 예전 폴더가 남아 있으면(다른 프로그램 파일이 섞여 있었거나 이름을 못 바꿈) 우리 파일만 정리 }
     if DirExists(OldDir) then
-      DelTree(OldDir, True, True, True);
+      RemoveOurFiles(OldDir);
   end;
 end;
 

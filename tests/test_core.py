@@ -287,10 +287,10 @@ def test_video_tag_args():
 def test_version_and_about_text():
     import tubegetapp
     from tubegetapp.core.deps import Deps, Tool
-    assert tubegetapp.APP_VERSION == "0.2.0" and tubegetapp.APP_STAGE == "베타"
+    assert tubegetapp.APP_VERSION == "0.2.1" and tubegetapp.APP_STAGE == "베타"
     from tubegetapp.ui.about_dialog import report_text, tool_line, version_text
-    assert version_text() == "0.2.0 (베타)"
+    assert version_text() == "0.2.1 (베타)"
     d = Deps(ytdlp=Tool("yt-dlp", "/x/yt-dlp", "2026.10.26", True), ffmpeg=Tool("ffmpeg"))
     assert tool_line(d.ytdlp) == "2026.10.26 · Acortube 폴더" and tool_line(d.ffmpeg) == "없음"
     t = report_text(d)
-    assert t.startswith("Acortube 0.2.0 (베타)") and "yt-dlp: 2026.10.26" in t and "ffmpeg: 없음" in t
+    assert t.startswith("Acortube 0.2.1 (베타)") and "yt-dlp: 2026.10.26" in t and "ffmpeg: 없음" in t

@@ -28,6 +28,9 @@ def _dirs(p, tmp_path):
     return tmp_path / "tubeget", tmp_path / "acortube"
 
 
+OUR_SETTINGS = '{"download_dir": "C:/x", "filename_template": "%(title)s.%(ext)s", "mode": "video"}'
+
+
 def test_app_name():
     assert tubegetapp.APP_NAME == "Acortube"
 
@@ -36,10 +39,10 @@ def test_old_folder_is_moved(monkeypatch, tmp_path):
     p = _fresh(monkeypatch, tmp_path)
     old, new = _dirs(p, tmp_path)
     (old / "bin").mkdir(parents=True)
-    (old / "settings.json").write_text('{"a": 1}', encoding="utf-8")
+    (old / "settings.json").write_text(OUR_SETTINGS, encoding="utf-8")
     d = p.data_dir()
     assert d == new
-    assert (d / "settings.json").read_text(encoding="utf-8") == '{"a": 1}'
+    assert (d / "settings.json").read_text(encoding="utf-8") == OUR_SETTINGS
     assert (d / "bin").is_dir() and not old.exists()
     assert p.data_dir() == d
 
@@ -56,6 +59,26 @@ def test_existing_new_folder_wins(monkeypatch, tmp_path):
     old.mkdir(parents=True)
     new.mkdir(parents=True)
     assert p.data_dir() == new and old.exists()
+
+
+def test_other_programs_folder_is_left_alone(monkeypatch, tmp_path):
+    """같은 이름의 다른 프로그램(원조 TubeGet)이 쓰는 폴더는 옮기지 않는다."""
+    p = _fresh(monkeypatch, tmp_path)
+    old, new = _dirs(p, tmp_path)
+    old.mkdir(parents=True)
+    (old / "settings.json").write_text('{"theme": "light", "server": "x"}', encoding="utf-8")
+    (old / "other.db").write_bytes(b"data")
+    d = p.data_dir()
+    assert d == new and new.is_dir()
+    assert (old / "other.db").exists() and (old / "settings.json").exists()
+    assert p.data_dir() == new
+
+
+def test_folder_without_settings_is_left_alone(monkeypatch, tmp_path):
+    p = _fresh(monkeypatch, tmp_path)
+    old, new = _dirs(p, tmp_path)
+    (old / "cache").mkdir(parents=True)
+    assert p.data_dir() == new and (old / "cache").is_dir()
 
 
 def teardown_module(_module):
