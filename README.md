@@ -33,7 +33,7 @@ The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); Acortube 
 
 ## Installing
 
-**Download the latest version from [Releases](https://github.com/FORMAT-Hyun/Acortube/releases/latest).** Nothing else (such as Python) is needed.
+**Download the latest version from [Releases](https://github.com/acortube/Acortube/releases/latest).** Nothing else (such as Python) is needed.
 
 | File | For | Description |
 |---|---|---|
@@ -67,7 +67,7 @@ There is no iPhone version. The App Store does not allow YouTube downloaders, an
 
 ### Android (phone)
 
-The phone app now lives in its own repository, **[Acortube Mobile](https://github.com/FORMAT-Hyun/Acortube-Mobile)**. Get the APK from [its Releases](https://github.com/FORMAT-Hyun/Acortube-Mobile/releases/latest).
+The phone app now lives in its own repository, **[Acortube Mobile](https://github.com/acortube/Acortube-Mobile)**. Get the APK from [its Releases](https://github.com/acortube/Acortube-Mobile/releases/latest).
 
 ## Usage
 

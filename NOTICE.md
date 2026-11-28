@@ -21,7 +21,7 @@ It does not cover the third-party software listed below, which keeps its own lic
 | [Python](https://docs.python.org/3/license.html) | PSF License | Bundled (Windows build) |
 
 yt-dlp, FFmpeg and Deno are downloaded at runtime; they are not part of this repository.
-The Android version lives in [Acortube Mobile](https://github.com/FORMAT-Hyun/Acortube-Mobile) and has its own notice.
+The Android version lives in [Acortube Mobile](https://github.com/acortube/Acortube-Mobile) and has its own notice.
 
 ## Responsible use
 

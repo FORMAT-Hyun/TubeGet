@@ -33,7 +33,7 @@
 
 ## 설치하기
 
-**[Releases](https://github.com/FORMAT-Hyun/Acortube/releases/latest)에서 최신 버전을 받으세요.** 파이썬 같은 다른 프로그램은 필요 없어요.
+**[Releases](https://github.com/acortube/Acortube/releases/latest)에서 최신 버전을 받으세요.** 파이썬 같은 다른 프로그램은 필요 없어요.
 
 | 파일 | 어디에 | 설명 |
 |---|---|---|
@@ -67,7 +67,7 @@
 
 ### 안드로이드 (휴대폰)
 
-휴대폰 앱은 **[Acortube Mobile](https://github.com/FORMAT-Hyun/Acortube-Mobile)** 저장소로 분리됐어요. APK는 [그쪽 Releases](https://github.com/FORMAT-Hyun/Acortube-Mobile/releases/latest)에서 받으세요.
+휴대폰 앱은 **[Acortube Mobile](https://github.com/acortube/Acortube-Mobile)** 저장소로 분리됐어요. APK는 [그쪽 Releases](https://github.com/acortube/Acortube-Mobile/releases/latest)에서 받으세요.
 
 ## 사용법
 
