@@ -2,7 +2,7 @@
 
 **English** | [한국어](README.ko.md)
 
-**A desktop YouTube downloader (GUI) powered by yt-dlp**
+**A desktop YouTube downloader (GUI) for Windows and macOS, powered by yt-dlp**
 
 Paste a link, pick the quality and format, and Acortube downloads it.
 The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); Acortube is the friendly window on top of it.
@@ -39,6 +39,8 @@ The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); Acortube 
 |---|---|---|
 | `Acortube-<version>-Setup-win64.exe` | Windows 10/11 | **Installer (recommended)**. Installs like any program; open it from the Start menu. |
 | `Acortube-<version>-Portable-win64.zip` | Windows 10/11 | **Portable**. No installation: extract to a new folder and run `Acortube.exe`. |
+| `Acortube-<version>-macOS-arm64.dmg` | macOS 12+ (Apple Silicon: M1/M2/M3/M4) | **Mac app** for Apple Silicon Macs. |
+| `Acortube-<version>-macOS-x64.dmg` | macOS 12+ (Intel) | **Mac app** for Intel Macs. |
 
 ### Windows
 
@@ -48,6 +50,20 @@ The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); Acortube 
 
 - To update, just run the new installer. Settings, history and installed tools live in `%APPDATA%\Acortube`, so they are kept.
 - Uninstall from [Settings → Apps → Installed apps]. The uninstaller asks whether to remove settings and tools too.
+
+### macOS
+
+1. Open the DMG and drag **Acortube** into **Applications**. (Not sure which one? Apple menu → About This Mac: "Apple M…" = arm64, "Intel" = x64.)
+2. The app is not signed by Apple, so macOS blocks it the first time. To open it:
+   - Open Acortube once, close the warning, then go to **System Settings → Privacy & Security** and click **Open Anyway** next to Acortube, or
+   - In Terminal: `xattr -dr com.apple.quarantine /Applications/Acortube.app`
+3. On first launch, click **[Install missing tools]** to download yt-dlp, ffmpeg and Deno automatically (only once).
+
+- Settings, history and tools live in `~/Library/Application Support/Acortube`.
+
+### iPhone
+
+There is no iPhone version. The App Store does not allow YouTube downloaders, and iOS does not let apps run tools like yt-dlp and ffmpeg.
 
 ### Android (phone)
 

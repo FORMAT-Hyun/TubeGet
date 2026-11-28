@@ -1,9 +1,9 @@
 ﻿; Acortube 설치 마법사 (Inno Setup 6)
 ; build_installer.bat 이 PyInstaller 빌드 후 자동으로 컴파일합니다.
-; 직접 컴파일: ISCC.exe /DMyAppVersion=0.1.8 installer\Acortube.iss
+; 직접 컴파일: ISCC.exe /DMyAppVersion=0.2.0 installer\Acortube.iss
 
 #ifndef MyAppVersion
-  #define MyAppVersion "0.1.8"
+  #define MyAppVersion "0.2.0"
 #endif
 #define MyAppName "Acortube"
 #define MyAppExe "Acortube.exe"
@@ -17,7 +17,9 @@ AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 VersionInfoVersion={#MyAppVersion}
 VersionInfoDescription={#MyAppName} 설치 프로그램
-DefaultDirName={autopf}\{#MyAppName}
+; 설치 폴더: 예전 TubeGet 폴더(예: C:\Program Files\TubeGet)에 설치돼 있었으면 이름을 Acortube 로 바꿔서 쓴다
+DefaultDirName={code:GetDefaultDir}
+UsePreviousAppDir=no
 DisableProgramGroupPage=yes
 ; 관리자 권한 없이도 설치 가능 (설치 시 '모든 사용자 / 나만' 선택 창이 뜸)
 PrivilegesRequired=lowest
@@ -72,6 +74,69 @@ Filename: "{app}\{#MyAppExe}"; Description: "Acortube 바로 실행하기"; Flag
 Type: filesandordirs; Name: "{app}"
 
 [Code]
+const
+  UninstKey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{6B2E4C1A-9F3D-4E7B-A1C5-3D8F2B7E9A40}_is1';
+
+var
+  OldDir: String;   // 예전 이름(TubeGet)의 설치 폴더. 없으면 ''
+
+{ 이전에 설치된 위치 (같은 AppId) }
+function PreviousAppDir(): String;
+begin
+  Result := '';
+  if IsWin64 then
+    RegQueryStringValue(HKA64, UninstKey, 'Inno Setup: App Path', Result);
+  if Result = '' then
+    RegQueryStringValue(HKA, UninstKey, 'Inno Setup: App Path', Result);
+  Result := RemoveBackslashUnlessRoot(Result);
+end;
+
+{ 기본 설치 폴더: 처음이면 ...\Acortube, 예전 ...\TubeGet 이면 같은 위치의 ...\Acortube, 그 밖에는 이전 위치 그대로 }
+function GetDefaultDir(Param: String): String;
+var
+  Prev: String;
+begin
+  Prev := PreviousAppDir();
+  OldDir := '';
+  if Prev = '' then
+    Result := ExpandConstant('{autopf}\{#MyAppName}')
+  else if CompareText(ExtractFileName(Prev), 'TubeGet') = 0 then
+  begin
+    OldDir := Prev;
+    Result := AddBackslash(ExtractFileDir(Prev)) + '{#MyAppName}';
+  end
+  else
+    Result := Prev;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+var
+  NewDir: String;
+begin
+  if (OldDir = '') or (not DirExists(OldDir)) then
+    exit;
+  NewDir := RemoveBackslashUnlessRoot(ExpandConstant('{app}'));
+  if CompareText(OldDir, NewDir) = 0 then
+    exit;   { 사용자가 예전 폴더를 그대로 고른 경우 }
+  if CurStep = ssInstall then
+  begin
+    { 설치 직전: 예전 TubeGet 폴더 이름을 Acortube 로 바꾼다 }
+    if not DirExists(NewDir) then
+    begin
+      if RenameFile(OldDir, NewDir) then
+        Log('Renamed ' + OldDir + ' -> ' + NewDir)
+      else
+        Log('Could not rename ' + OldDir + '; installing into ' + NewDir);
+    end;
+  end
+  else if CurStep = ssPostInstall then
+  begin
+    { 이름을 바꾸지 못했거나 다른 곳에 설치했으면 남은 예전 폴더를 지운다 (설치 정보는 이미 새 위치를 가리킴) }
+    if DirExists(OldDir) then
+      DelTree(OldDir, True, True, True);
+  end;
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   DataDir: String;

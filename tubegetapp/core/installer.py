@@ -98,6 +98,11 @@ class DepInstaller(QThread):
             raise IOError(tr("다운로드가 중간에 끊겼어요"))
 
     def _install(self, name: str, spec: dict) -> None:
+        """spec 하나 + 'extra'(같은 도구의 다른 파일, 예: macOS 의 ffprobe) 를 차례로 설치."""
+        for part in [spec, *spec.get("extra", [])]:
+            self._install_part(name, part)
+
+    def _install_part(self, name: str, spec: dict) -> None:
         target_dir = bin_dir()
         with tempfile.TemporaryDirectory(dir=target_dir) as tmp:
             tmp_path = Path(tmp)

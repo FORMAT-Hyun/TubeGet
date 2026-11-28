@@ -205,7 +205,10 @@ def download_spec(name: str) -> Optional[dict]:
             return {"url": f"{base}/{asset}", "archive": "zip",
                     "members": ["ffmpeg.exe", "ffprobe.exe"]}
         if IS_MAC:
-            return None  # macOS 는 brew install ffmpeg 안내
+            # macOS: Martin Riedl 정적 빌드 (Intel / Apple Silicon). ffmpeg 와 ffprobe 가 따로 된 zip
+            mac = "https://ffmpeg.martin-riedl.de/redirect/latest/macos/" + ("arm64" if arch == "arm64" else "amd64")
+            return {"url": f"{mac}/release/ffmpeg.zip", "archive": "zip", "members": ["ffmpeg"],
+                    "extra": [{"url": f"{mac}/release/ffprobe.zip", "archive": "zip", "members": ["ffprobe"]}]}
         asset = "ffmpeg-master-latest-linuxarm64-gpl.tar.xz" if arch == "arm64" else "ffmpeg-master-latest-linux64-gpl.tar.xz"
         return {"url": f"{base}/{asset}", "archive": "tar.xz", "members": ["ffmpeg", "ffprobe"]}
     return None

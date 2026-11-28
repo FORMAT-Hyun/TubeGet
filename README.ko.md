@@ -2,7 +2,7 @@
 
 [English](README.md) | **한국어**
 
-**yt-dlp 기반 유튜브 다운로더 (GUI)**
+**yt-dlp 기반 유튜브 다운로더 (GUI) · Windows / macOS**
 
 주소를 붙여넣고 화질과 형식을 고르면 받아주는 데스크톱 프로그램이에요.
 다운로드는 [yt-dlp](https://github.com/yt-dlp/yt-dlp)가 하고, Acortube는 그걸 편하게 쓰게 해 주는 화면이에요.
@@ -39,6 +39,8 @@
 |---|---|---|
 | `Acortube-<버전>-Setup-win64.exe` | Windows 10/11 | **설치 버전 (추천)**. 일반 프로그램처럼 설치하고 시작 메뉴에서 켜요. |
 | `Acortube-<버전>-Portable-win64.zip` | Windows 10/11 | **포터블**. 설치 없이 새 폴더에 압축을 풀고 `Acortube.exe`를 실행해요. |
+| `Acortube-<버전>-macOS-arm64.dmg` | macOS 12 이상 (Apple Silicon: M1/M2/M3/M4) | **Mac 앱**. Apple Silicon Mac용이에요. |
+| `Acortube-<버전>-macOS-x64.dmg` | macOS 12 이상 (Intel) | **Mac 앱**. Intel Mac용이에요. |
 
 ### Windows
 
@@ -48,6 +50,20 @@
 
 - 새 버전은 그냥 새 설치 파일을 실행하면 돼요. 설정, 기록, 설치된 도구는 `%APPDATA%\Acortube`에 있어서 그대로 남아요.
 - 제거는 [설정 → 앱 → 설치된 앱]에서 해요. 제거할 때 설정과 도구 폴더도 지울지 물어봐요.
+
+### macOS
+
+1. DMG를 열고 **Acortube**를 **응용 프로그램(Applications)** 폴더로 끌어다 놓아요. (어느 걸 받을지 모르겠으면: Apple 메뉴 → 이 Mac에 관하여에서 "Apple M…"이면 arm64, "Intel"이면 x64)
+2. Apple 서명이 없어서 처음에는 macOS가 실행을 막아요. 이렇게 열어 주세요:
+   - Acortube를 한 번 열고 경고를 닫은 뒤, **시스템 설정 → 개인정보 보호 및 보안**에서 Acortube 옆의 **그래도 열기**를 눌러요. 또는
+   - 터미널에서: `xattr -dr com.apple.quarantine /Applications/Acortube.app`
+3. 처음 켜면 **[없는 도구 설치]**를 눌러 yt-dlp, ffmpeg, Deno를 자동으로 받아요 (한 번만).
+
+- 설정, 기록, 도구는 `~/Library/Application Support/Acortube`에 있어요.
+
+### 아이폰
+
+아이폰 버전은 없어요. 앱스토어가 유튜브 다운로더를 허용하지 않고, iOS는 앱 안에서 yt-dlp·ffmpeg 같은 도구를 실행할 수 없게 막아 두었어요.
 
 ### 안드로이드 (휴대폰)
 
