@@ -17,7 +17,7 @@ def _close_qt_windows() -> None:
     except ImportError:
         return
     app = QApplication.instance()
-    if app is None:
+    if not isinstance(app, QApplication):   # 창 없는 QCoreApplication 이면 닫을 창도 없다
         return
     for w in list(QApplication.topLevelWidgets()):
         w.close()

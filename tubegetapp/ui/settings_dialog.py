@@ -144,6 +144,25 @@ class SettingsDialog(QDialog):
         v.addWidget(hint_label(tr("영상 주소에 재생목록(list=)이 붙어 있을 때 영상 하나 대신 재생목록 전체를 보여줘요.")))
         lay.addWidget(g)
 
+        # 구독 (자동 백업) ------------------------------------------------
+        g = QGroupBox(tr("구독 (자동 백업)"))
+        f = QFormLayout(g)
+        f.setVerticalSpacing(6)
+        self.subs_auto = QCheckBox(tr("구독한 채널·재생목록의 새 영상을 자동으로 확인"))
+        self.subs_auto.setChecked(settings.subs_auto_check)
+        f.addRow(self.subs_auto)
+        self.subs_interval = QSpinBox()
+        self.subs_interval.setRange(1, 24)
+        self.subs_interval.setSuffix(tr(" 시간마다"))
+        self.subs_interval.setValue(min(max(settings.subs_interval_hours, 1), 24))
+        f.addRow(tr("확인 간격"), self.subs_interval)
+        self.close_tray = QCheckBox(tr("창을 닫아도 트레이에서 계속 실행"))
+        self.close_tray.setChecked(settings.close_to_tray)
+        f.addRow(self.close_tray)
+        f.addRow("", hint_label(tr("켜 두면 창을 닫아도 구독 확인과 다운로드가 계속돼요. "
+                                   "완전히 끄려면 트레이 아이콘을 오른쪽 클릭 → [종료]를 누르세요.")))
+        lay.addWidget(g)
+
         # 로그인 쿠키 ------------------------------------------------------
         g = QGroupBox(tr("브라우저 쿠키 (연령 제한·멤버십·봇 확인 영상용)"))
         f = QFormLayout(g)
@@ -223,5 +242,8 @@ class SettingsDialog(QDialog):
         s.auto_update_ytdlp = self.auto_update.isChecked()
         s.clipboard_autofetch = self.clipboard.isChecked()
         s.notify_on_finish = self.notify.isChecked()
+        s.subs_auto_check = self.subs_auto.isChecked()
+        s.subs_interval_hours = self.subs_interval.value()
+        s.close_to_tray = self.close_tray.isChecked()
         s.save()
         self.accept()

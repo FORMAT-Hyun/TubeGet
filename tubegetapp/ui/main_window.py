@@ -25,6 +25,7 @@ from ..core.options import (AUDIO_FORMATS, AUDIO_QUALITIES, LOSSY_AUDIO, HEIGHT_
 from ..core.queue import QueueManager
 from ..core.queue_store import load_jobs, save_jobs
 from ..core.runner import DONE, FAILED, DownloadJob
+from ..core.subscriptions import Subscription, SubscriptionChecker, SubscriptionStore, classify_url
 from ..utils import (has_playlist_param, has_video_param, human_duration, human_size, is_url,
                      is_youtube_url, reveal_in_explorer)
 from .about_dialog import AboutDialog, version_text
@@ -34,6 +35,7 @@ from .playlist_dialog import PlaylistDialog
 from .queue_item import QueueItemWidget
 from .ready_item import ReadyItem
 from .settings_dialog import SettingsDialog
+from .subscriptions_view import SubscribeDialog, SubscriptionsView
 from .subtitle_dialog import LANG_NAMES, SubtitleDialog, default_selection, dub_name, summarize
 from .tag_dialog import TagDialog, TagState
 from . import icons
@@ -94,6 +96,17 @@ class MainWindow(QMainWindow):
         self.queue.jobAdded.connect(lambda _j: self._schedule_save())
         self.queue.jobRemoved.connect(lambda _j: self._schedule_save())
         self.queue.jobFinished.connect(lambda _j: self._schedule_save())
+
+        # 구독 (자동 백업)
+        self.subs = SubscriptionStore()
+        self.sub_checker = SubscriptionChecker(self.subs, lambda: self.deps if self.deps_ready else None,
+                                               lambda: self.settings.cookies_browser, self)
+        self.sub_checker.found.connect(self._on_sub_found)
+        self._quit_requested = False      # 트레이 [종료]로 완전히 끄는 중
+        self._tray_hint_shown = False
+        self._sub_timer = QTimer(self)
+        self._sub_timer.setInterval(60_000)
+        self._sub_timer.timeout.connect(self._maybe_check_subs)
 
         self.setWindowTitle(APP_NAME)
         self.setWindowIcon(app_icon())
@@ -270,7 +283,8 @@ class MainWindow(QMainWindow):
         self._filter_btns: dict[str, QPushButton] = {}
         self._filter_group = QButtonGroup(self)
         self._filter_group.setExclusive(True)
-        for key, label in (("all", tr("전체")), ("video", tr("동영상")), ("audio", tr("오디오")), ("history", tr("기록"))):
+        for key, label in (("all", tr("전체")), ("video", tr("동영상")), ("audio", tr("오디오")), ("subs", tr("구독")),
+                           ("history", tr("기록"))):
             b = QPushButton(label)
             b.setProperty("tab", True)
             b.setCheckable(True)
@@ -325,6 +339,11 @@ class MainWindow(QMainWindow):
         self.history_view = HistoryView(self.history)
         self.history_view.redownloadRequested.connect(self._redownload)
         self.stack.addWidget(self.history_view)
+
+        self.subs_view = SubscriptionsView(self.subs, self.sub_checker, self._ensure_dir)
+        self.subs_view.addRequested.connect(lambda url: self._subscribe(url))
+        self.subs_view.resetOptionsRequested.connect(self._reset_sub_options)
+        self.stack.addWidget(self.subs_view)
         bd.addWidget(self.stack, 1)
 
         # ---- 상태 표시줄 -------------------------------------------------------
@@ -359,9 +378,13 @@ class MainWindow(QMainWindow):
         menu = QMenu(self)
         a_show = QAction(tr("창 열기"), self)
         a_show.triggered.connect(self._raise)
+        a_subs = QAction(tr("구독 지금 확인"), self)
+        a_subs.triggered.connect(self.sub_checker.check_enabled)
         a_quit = QAction(tr("종료"), self)
-        a_quit.triggered.connect(self.close)
+        a_quit.triggered.connect(self._quit_from_tray)
         menu.addAction(a_show)
+        menu.addAction(a_subs)
+        menu.addSeparator()
         menu.addAction(a_quit)
         self.tray.setContextMenu(menu)
         self.tray.activated.connect(lambda reason: reason == QSystemTrayIcon.ActivationReason.Trigger and self._raise())
@@ -534,6 +557,10 @@ class MainWindow(QMainWindow):
     def _set_deps(self, deps: Deps) -> None:
         self.deps = deps
         self.deps_ready = True
+        if not self._sub_timer.isActive():
+            # 구독 자동 확인: 도구가 준비되면 시작 (켜고 잠시 뒤 한 번, 그 뒤로 1분마다 '때가 됐는지' 확인)
+            self._sub_timer.start()
+            QTimer.singleShot(20_000, self._maybe_check_subs)
         self.queue.set_paused(self.queue._paused)   # 도구가 새로 설치됐으면 대기 중인 작업 시작
         missing = deps.missing_required()
         if missing:
@@ -792,6 +819,7 @@ class MainWindow(QMainWindow):
         item.removeRequested.connect(self._remove_ready)
         item.selectRequested.connect(self._select_ready)
         item.loadPlaylistRequested.connect(self._load_playlist_for)
+        item.subscribeRequested.connect(lambda it: self._subscribe(it.subscribe_url() or it.url, it.info.title))
         self._fresh_state(item)
         self._ready.insert(0, item)
         if self._filter == "history":
@@ -971,7 +999,7 @@ class MainWindow(QMainWindow):
             job.duration = info.duration
             self.queue.add(job)
             self.status_msg.setText(tr("다운로드 목록에 추가했어요"))
-        if self._filter == "history" or self._filter not in ("all", opts.mode):
+        if self._filter in ("history", "subs") or self._filter not in ("all", opts.mode):
             self._set_filter("all")
 
     def _redownload(self, url: str) -> None:
@@ -1020,21 +1048,130 @@ class MainWindow(QMainWindow):
         elif job.state == FAILED:
             self.toasts.show("error", tr("다운로드 실패"), (job.error or job.title)[:140], timeout_ms=8000)
 
+    # ==================================================================
+    # 구독 (자동 백업)
+    # ==================================================================
+    def _subscription_options(self) -> Optional[DownloadOptions]:
+        """구독에 저장할 받기 설정: 지금 툴바 설정에서 영상마다 다른 값(태그 직접 입력·구간 등)은 뺀다."""
+        opts = self._current_options()
+        if opts is None:
+            return None
+        s = self.settings
+        tags_on = opts.audio_tags if opts.mode == "audio" else opts.embed_metadata
+        return opts.copy(
+            output_dir="", subfolder="", index=None, overwrite=False,
+            tag_values=None, tag_smart=bool(tags_on and s.audio_tag_clean),
+            sub_langs=s.sub_default_langs, auto_subs=s.sub_default_auto, dub_lang=s.dub_default,
+            section_start=None, section_end=None,
+        )
+
+    def _subscribe(self, url: str, title: str = "") -> None:
+        kind, norm = classify_url(url)
+        if kind is None:
+            QMessageBox.information(self, tr("구독할 수 없는 주소"),
+                                    tr("유튜브 채널(@이름) 또는 재생목록(list=) 주소만 구독할 수 있어요."))
+            return
+        existing = self.subs.find_url(norm)
+        if existing is not None:
+            self._set_filter("subs")
+            self.toasts.show("warn", tr("이미 구독 중이에요"), existing.display_title())
+            return
+        opts = self._subscription_options()
+        if opts is None:
+            return
+        dlg = SubscribeDialog(norm, kind, title, opts.summary(), self._ensure_dir(), self)
+        ok = dlg.exec()
+        if not ok:
+            dlg.deleteLater()
+            return
+        sub = Subscription(url=norm, kind=kind, title=title, folder=dlg.folder.text().strip(),
+                           options=opts.to_dict(), initial=dlg.initial(),
+                           skip_shorts=dlg.cb_shorts.isChecked(), skip_live=dlg.cb_live.isChecked())
+        dlg.deleteLater()
+        self.subs.add(sub)
+        self._set_filter("subs")
+        self.subs_view.reload()
+        self.toasts.show("ok", tr("구독했어요"), sub.display_title())
+        if self.deps_ready:
+            self.sub_checker.check([sub])   # 바로 한 번 확인 (처음 설정에 따라 받거나 기록만)
+
+    def _reset_sub_options(self, sub_id: str) -> None:
+        sub = self.subs.get(sub_id)
+        opts = self._subscription_options()
+        if sub is None or opts is None:
+            return
+        sub.options = opts.to_dict()
+        self.subs.save()
+        self.subs_view.reload()
+        self.toasts.show("ok", tr("받을 설정을 바꿨어요"), opts.summary())
+
+    def _on_sub_found(self, sub: Subscription, entries: list) -> None:
+        """구독에서 새 영상을 찾으면 다운로드 목록에 넣는다."""
+        try:
+            base = DownloadOptions.from_dict(sub.options)
+        except Exception:  # noqa: BLE001
+            base = DownloadOptions()
+        s = self.settings
+        opts = base.copy(output_dir=self._ensure_dir(), subfolder=sub.folder or sub.title, index=None,
+                         cookies_browser=s.cookies_browser, rate_limit=s.rate_limit)
+        active = {j.url for j in self.queue.jobs if j.is_active}
+        added = 0
+        for e in entries:
+            if e.url in active:
+                continue
+            job = DownloadJob(e.url, e.title, opts, e.thumbnail)
+            job.duration = e.duration
+            self.queue.add(job)
+            added += 1
+        if not added:
+            return
+        title = tr("구독: {title}").format(title=sub.display_title())
+        body = tr("새 영상 {n}개를 받아요").format(n=added)
+        if self.isVisible() and not self.isMinimized():
+            self.toasts.show("ok", title, body)
+        elif self.tray is not None:
+            self.tray.showMessage(title, body, QSystemTrayIcon.MessageIcon.Information, 5000)
+
+    def _maybe_check_subs(self) -> None:
+        """자동 확인 때가 됐으면 켜진 구독을 모두 확인한다."""
+        s = self.settings
+        if not s.subs_auto_check or not self.deps_ready or self.sub_checker.busy:
+            return
+        if not any(x.enabled for x in self.subs.items):
+            return
+        interval = timedelta(hours=min(max(s.subs_interval_hours, 1), 24))
+        try:
+            last = datetime.fromisoformat(s.subs_last_check) if s.subs_last_check else None
+        except ValueError:
+            last = None
+        if last is not None and datetime.now() - last < interval:
+            return
+        s.subs_last_check = datetime.now().isoformat(timespec="seconds")
+        s.save()
+        self.sub_checker.check_enabled()
+
+    def _quit_from_tray(self) -> None:
+        self._quit_requested = True
+        self._raise()
+        self.close()
+
     # ---- 필터 / 목록 관리 --------------------------------------------------
     def _set_filter(self, key: str) -> None:
         self._filter = key
         btn = self._filter_btns.get(key)
         if btn is not None and not btn.isChecked():
             btn.setChecked(True)
-        self.stack.setCurrentIndex(1 if key == "history" else 0)
-        self.b_list_menu.setVisible(key != "history")
-        self.q_status.setVisible(key != "history")
+        self.stack.setCurrentIndex({"history": 1, "subs": 2}.get(key, 0))
+        self.b_list_menu.setVisible(key not in ("history", "subs"))
+        self.q_status.setVisible(key not in ("history", "subs"))
+        if key == "subs":
+            self.subs_view.reload()
         self._apply_filter()
 
     def _apply_filter(self) -> None:
         shown = 0
         for w in self._item_widgets.values():
-            ok = self._filter in ("all", "history") or w.job.options.mode == self._filter
+            ok = self._filter in ("all", "history", "subs") or w.job.options.mode == self._filter
             w.setVisible(ok)
             shown += ok
         for r in self._ready:
@@ -1236,6 +1373,15 @@ class MainWindow(QMainWindow):
             event.acceptProposedAction()
 
     def closeEvent(self, event) -> None:  # noqa: N802
+        # '창을 닫아도 트레이에서 계속 실행': 창만 숨기고 구독 확인·다운로드는 계속
+        if self.settings.close_to_tray and self.tray is not None and not self._quit_requested:
+            event.ignore()
+            self.hide()
+            if not self._tray_hint_shown:
+                self._tray_hint_shown = True
+                self.tray.showMessage(APP_NAME, tr("트레이에서 계속 실행돼요. 완전히 끄려면 아이콘을 오른쪽 클릭 → [종료]."),
+                                      QSystemTrayIcon.MessageIcon.Information, 5000)
+            return
         if self.queue.has_active():
             box = QMessageBox(self)
             box.setWindowTitle(tr("종료"))
@@ -1246,6 +1392,7 @@ class MainWindow(QMainWindow):
             box.exec()
             if box.clickedButton() is not b_quit:
                 event.ignore()
+                self._quit_requested = False
                 return
         # 지금 상태(진행 중 → 대기)로 목록을 저장한 다음 취소
         self._save_queue()
@@ -1253,6 +1400,8 @@ class MainWindow(QMainWindow):
         self._save_timer.stop()
         self.queue.cancel_all()
         self.fetcher.abort()
+        self.sub_checker.stop()
+        self._sub_timer.stop()
         self.settings.save()
         if self.tray is not None:
             self.tray.hide()

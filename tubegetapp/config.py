@@ -69,6 +69,12 @@ class Settings:
     splitter_sizes: str = ""       # "위,아래" 픽셀
     options_collapsed: bool = False
 
+    # 구독 (자동 백업)
+    subs_auto_check: bool = True   # 구독한 채널·재생목록을 자동으로 확인
+    subs_interval_hours: int = 3   # 자동 확인 간격 (시간)
+    subs_last_check: str = ""      # 마지막으로 전체를 확인한 시각 (ISO)
+    close_to_tray: bool = False    # 창을 닫아도 트레이에서 계속 실행 (구독 확인·다운로드 계속)
+
     @classmethod
     def path(cls) -> Path:
         return data_dir() / "settings.json"

@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QSizePolicy, QVBoxLay
 
 from ..core.metadata import MediaInfo
 from ..core.options import height_label
+from ..core.subscriptions import classify_url
 from ..utils import has_playlist_param, human_duration, human_size
 from . import icons
 from .theme import repolish
@@ -23,6 +24,7 @@ class ReadyItem(QFrame):
     removeRequested = Signal(object)
     selectRequested = Signal(object)
     loadPlaylistRequested = Signal(object)
+    subscribeRequested = Signal(object)
 
     def __init__(self, info: MediaInfo, url: str, thumbs: ThumbLoader, parent: Optional[QWidget] = None):
         super().__init__(parent)
@@ -86,6 +88,12 @@ class ReadyItem(QFrame):
         self.b_download.setMinimumSize(150, 40)
         self.b_download.clicked.connect(lambda: self.downloadRequested.emit(self))
         right.addWidget(self.b_download)
+        # 채널·재생목록이면 구독(자동 백업) 버튼
+        self.b_subscribe = make_button(tr("구독하기 (새 영상 자동 받기)"), ghost=True)
+        self.b_subscribe.setToolTip(tr("새 영상이 올라오면 지금 설정으로 자동으로 받아요."))
+        self.b_subscribe.clicked.connect(lambda: self.subscribeRequested.emit(self))
+        self.b_subscribe.setVisible(self.subscribe_url() is not None)
+        right.addWidget(self.b_subscribe)
         row.addLayout(right)
 
         self._fill(info)
@@ -124,6 +132,13 @@ class ReadyItem(QFrame):
             self.meta_row.addWidget(lbl)
         self.meta_row.addStretch(1)
         self.b_download.setEnabled(self.can_download())
+
+    def subscribe_url(self) -> Optional[str]:
+        """구독할 수 있는 주소 (채널·재생목록), 아니면 None."""
+        for u in (self.info.url, self.url):
+            if u and classify_url(u)[0] is not None:
+                return u
+        return None
 
     def can_download(self) -> bool:
         if self.info.kind == "playlist":

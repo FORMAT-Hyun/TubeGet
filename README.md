@@ -26,6 +26,10 @@ The downloading is done by [yt-dlp](https://github.com/yt-dlp/yt-dlp); Acortube 
   - Files that already exist are marked "skipped", with an [Overwrite] button.
   - Removing an item from the list also cleans up its partial files (`.part`, etc.).
 - **Instant download**: With the toolbar switch on, clicking [Paste link] starts downloading right away with the current settings. Playlists open a selection window.
+- **Subscriptions (auto backup)**: Subscribe to a channel or playlist, and new videos are downloaded automatically with the settings you chose.
+  - Choose what to get at first: only new videos from now on, the 5 latest too, or everything already there.
+  - Shorts and past live streams can be skipped. Each subscription saves into its own folder.
+  - Checks run shortly after launch and then every few hours (1–24). Optionally keep running in the tray when the window is closed.
 - **History**: Open downloaded files or their folder, or download again
 - **Automatic tool setup**: On first run, install yt-dlp, ffmpeg and Deno with one click. yt-dlp updates are checked once a day.
 - **Languages**: English and Korean. Choose under [Settings → Language], or leave it on "Auto" to follow the system language. Takes effect after a restart.
@@ -77,6 +81,14 @@ The phone app now lives in its own repository, **[Acortube Mobile](https://githu
 
 With [Instant] on, steps 2 and 3 are skipped.
 
+### Subscriptions (auto backup)
+
+1. Open the **[Subscriptions]** tab and enter a channel (`https://www.youtube.com/@name`) or playlist (`list=`) link, then click **[Subscribe]**. You can also click **[Subscribe]** on a loaded channel or playlist card.
+2. Choose what to download at first and the folder name. The download settings are the ones selected in the toolbar at that moment.
+3. New videos are checked automatically and added to the download list. Uncheck a subscription to pause it; right-click for **Check now**, **Open save folder**, **Use current toolbar settings** or **Unsubscribe**.
+
+Check interval and **Keep running in the tray when the window is closed** are under [Settings → Subscriptions (auto backup)]. To quit completely while running in the tray, right-click the tray icon → [Quit].
+
 ### Troubleshooting
 
 | Problem | Solution |
@@ -119,6 +131,7 @@ tubegetapp/
     errors.py              yt-dlp errors → readable messages
     tags.py                Tag guessing (splitting "Artist - Song", removing labels)
     history.py             Download history
+    subscriptions.py       Channel / playlist subscriptions (auto backup)
   ui/                      PySide6 user interface
 tests/
   test_core.py             Unit tests (pytest)
