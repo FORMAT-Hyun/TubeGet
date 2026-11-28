@@ -16,7 +16,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-14        # Apple Silicon
+          - runner: macos-15        # Apple Silicon
             arch: arm64
           - runner: macos-15-intel  # Intel
             arch: x64
@@ -37,6 +37,7 @@ jobs:
         env:
           QT_QPA_PLATFORM: offscreen
           TUBEGET_LANG: ko
+          ACORTUBE_FAST_EXIT: "1"
         run: python -m pytest -q tests
 
       - name: Version
